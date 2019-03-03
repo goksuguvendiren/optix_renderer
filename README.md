@@ -1,1 +1,1 @@
-# optix_renderer
+# OptiX Renderer
