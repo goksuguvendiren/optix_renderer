@@ -30,6 +30,7 @@
 #include <iostream>
 #include <stdint.h>
 #include <chrono>
+#include <experimental/filesystem>
 
 #include <utils.hpp>
 
@@ -162,7 +163,6 @@ GeometryInstance createParallelogram(
     return gi;
 }
 
-
 void createContext()
 {
     context = Context::create();
@@ -220,6 +220,13 @@ void loadLight()
 
 void loadGeometry()
 {
+    auto current_path = std::experimental::filesystem::current_path();
+    auto dir_home = current_path.parent_path();
+
+    auto lamb = dir_home.parent_path() / "src" / "shading_models" / "lambertian.cu";
+    std::cout << lamb.string() << '\n';
+    assert(std::experimental::filesystem::exists(lamb));
+
     // Set up material
     Material diffuse = context->createMaterial();
     const char *ptx = sutil::getPtxString( SAMPLE_NAME, "../src/shading_models/lambertian.cu" );
@@ -612,6 +619,7 @@ int main( int argc, char** argv )
                           std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " ms.\n";
 
             sutil::displayBufferPPM( std::string{"../output" + std::to_string(sqrt_num_samples) + ".ppm"}.c_str(), getOutputBuffer(), false );
+            std::cout << getOutputBuffer() << '\n';
             destroyContext();
         }
 

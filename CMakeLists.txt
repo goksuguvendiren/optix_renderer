@@ -334,6 +334,8 @@ if(GLUT_FOUND AND OPENGL_FOUND)
         src/utils.cpp
         main.cpp
     )
+
+    target_link_libraries(optixPathTracer PUBLIC stdc++fs)
 else()
     # GLUT or OpenGL not found
     message("Disabling optixPathTracer, which requires GLUT and OpenGL.")
