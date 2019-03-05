@@ -33,6 +33,7 @@
 #include <experimental/filesystem>
 
 #include <utils.hpp>
+#include <camera.hpp>
 
 using namespace optix;
 
@@ -343,14 +344,15 @@ void loadGeometry()
     context["top_object"]->set( geometry_group );
 }
 
-  
+grpt::camera camera;
+
 void setupCamera()
 {
-    camera_eye    = make_float3( 278.0f, 273.0f, -900.0f );
-    camera_lookat = make_float3( 278.0f, 273.0f,    0.0f );
-    camera_up     = make_float3(   0.0f,   1.0f,    0.0f );
+    camera_eye    = camera.eye();//make_float3( 278.0f, 273.0f, -900.0f );
+    camera_lookat = camera.lookat();//make_float3( 278.0f, 273.0f,    0.0f );
+    camera_up     = camera.up();//make_float3(   0.0f,   1.0f,    0.0f );
 
-    camera_rotate  = Matrix4x4::identity();
+    camera_rotate  = camera.rotate();//Matrix4x4::identity();
 }
 
 
@@ -360,28 +362,31 @@ void updateCamera()
     const float aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
     
     float3 camera_u, camera_v, camera_w;
-    sutil::calculateCameraVariables(
-            camera_eye, camera_lookat, camera_up, fov, aspect_ratio,
-            camera_u, camera_v, camera_w, /*fov_is_vertical*/ true );
+//    sutil::calculateCameraVariables(
+//            camera_eye, camera_lookat, camera_up, fov, aspect_ratio,
+//            camera_u, camera_v, camera_w, /*fov_is_vertical*/ true );
+//
+//    const Matrix4x4 frame = Matrix4x4::fromBasis(
+//            normalize( camera_u ),
+//            normalize( camera_v ),
+//            normalize( -camera_w ),
+//            camera_lookat);
+//    const Matrix4x4 frame_inv = frame.inverse();
+//    // Apply camera rotation twice to match old SDK behavior
+//    const Matrix4x4 trans     = frame*camera_rotate*camera_rotate*frame_inv;
+//
+//    camera_eye    = make_float3( trans*make_float4( camera_eye,    1.0f ) );
+//    camera_lookat = make_float3( trans*make_float4( camera_lookat, 1.0f ) );
+//    camera_up     = make_float3( trans*make_float4( camera_up,     0.0f ) );
+//
+//    sutil::calculateCameraVariables(
+//            camera_eye, camera_lookat, camera_up, fov, aspect_ratio,
+//            camera_u, camera_v, camera_w, true );
+//
+//    camera_rotate = Matrix4x4::identity();
+//
 
-    const Matrix4x4 frame = Matrix4x4::fromBasis( 
-            normalize( camera_u ),
-            normalize( camera_v ),
-            normalize( -camera_w ),
-            camera_lookat);
-    const Matrix4x4 frame_inv = frame.inverse();
-    // Apply camera rotation twice to match old SDK behavior
-    const Matrix4x4 trans     = frame*camera_rotate*camera_rotate*frame_inv; 
-
-    camera_eye    = make_float3( trans*make_float4( camera_eye,    1.0f ) );
-    camera_lookat = make_float3( trans*make_float4( camera_lookat, 1.0f ) );
-    camera_up     = make_float3( trans*make_float4( camera_up,     0.0f ) );
-
-    sutil::calculateCameraVariables(
-            camera_eye, camera_lookat, camera_up, fov, aspect_ratio,
-            camera_u, camera_v, camera_w, true );
-
-    camera_rotate = Matrix4x4::identity();
+    std::tie(camera_u, camera_v, camera_w) = camera.Update(camera_eye, camera_lookat, camera_up, camera_rotate);
 
     if( camera_changed ) // reset accumulation
         frame_number = 1;
@@ -392,7 +397,6 @@ void updateCamera()
     context[ "U"  ]->setFloat( camera_u );
     context[ "V"  ]->setFloat( camera_v );
     context[ "W"  ]->setFloat( camera_w );
-
 }
 
 

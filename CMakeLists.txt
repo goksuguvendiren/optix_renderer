@@ -332,6 +332,7 @@ if(GLUT_FOUND AND OPENGL_FOUND)
         random.h
 
         src/utils.cpp
+        src/camera.cpp
         main.cpp
     )
 
