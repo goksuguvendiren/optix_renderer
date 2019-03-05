@@ -328,7 +328,7 @@ if(GLUT_FOUND AND OPENGL_FOUND)
         optixPathTracer.h
 
         # These files are common among multiple samples
-        parallelogram.cu
+        src/shapes/parallelogram.cu
         random.h
 
         src/utils.cpp

@@ -3,8 +3,8 @@
 //
 
 #include <optixu/optixu_math_namespace.h>
-#include "../../optixPathTracer.h"
-#include "../../include/point_light.hpp"
+#include "../../include/light_sources/point.hpp"
+#include "../../include/light_sources/area.hpp"
 #include "random.h"
 
 struct PerRayData_pathtrace_shadow
@@ -47,7 +47,7 @@ rtDeclareVariable(rtObject,      top_object, , );
 
 rtDeclareVariable(PerRayData_pathtrace, current_prd, rtPayload, );
 
-rtBuffer<ParallelogramLight>     lights;
+rtBuffer<grpt::area_light>       lights;
 rtBuffer<grpt::point_light>      point_lights;
 
 RT_PROGRAM void diffuse()
@@ -85,7 +85,7 @@ RT_PROGRAM void diffuse()
     for(int i = 0; i < num_lights; ++i)
     {
         // Choose random point on light
-        ParallelogramLight light = lights[i];
+        grpt::area_light light = lights[i];
         const float z1 = rnd(current_prd.seed);
         const float z2 = rnd(current_prd.seed);
         const float3 light_pos = light.corner + light.v1 * z1 + light.v2 * z2;
@@ -142,8 +142,8 @@ RT_PROGRAM void diffuse()
                 optix::float3 color = light.Emission() * (diffuse_color);
                 result += color;
             }
-            else
-                result += optix::make_float3(0.8);
+//            else
+//                result += optix::make_float3(0.8);
         }
     }
 

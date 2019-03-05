@@ -19,7 +19,8 @@
 #include <optixu/optixpp_namespace.h>
 #include <optixu/optixu_math_stream_namespace.h>
 
-#include "point_light.hpp"
+#include "include/light_sources/point.hpp"
+#include "include/light_sources/area.hpp"
 
 #include "optixPathTracer.h"
 #include <sutil.h>
@@ -34,6 +35,7 @@
 
 #include <utils.hpp>
 #include <camera.hpp>
+#include <scene_parser.hpp>
 
 using namespace optix;
 
@@ -69,6 +71,8 @@ sutil::Arcball arcball;
 int2           mouse_prev_pos;
 int            mouse_button;
 
+grpt::scene_parser parser;
+auto scene = parser.LoadFromJson("../../input.json");
 
 //------------------------------------------------------------------------------
 //
@@ -193,28 +197,22 @@ void createContext()
 void loadLight()
 {
     // Light buffer
-    ParallelogramLight light;
-    light.corner = make_float3(343.0f, 548.6f, 227.0f);
-    light.v1 = make_float3(-130.0f, 0.0f, 0.0f);
-    light.v2 = make_float3(0.0f, 0.0f, 105.0f);
-    light.normal = normalize(cross(light.v1, light.v2));
-    light.emission = make_float3(15.0f, 15.0f, 5.0f);
+    grpt::area_light& light = scene.area_ls[0];
 
     Buffer light_buffer = context->createBuffer(RT_BUFFER_INPUT);
     light_buffer->setFormat(RT_FORMAT_USER);
-    light_buffer->setElementSize(sizeof(ParallelogramLight));
+    light_buffer->setElementSize(sizeof(grpt::area_light));
     light_buffer->setSize(1u);
     memcpy(light_buffer->map(), &light, sizeof(light));
     light_buffer->unmap();
     context["lights"]->setBuffer(light_buffer);
 
-    grpt::point_light plight(make_float3(343.0f, 548.6f, 227.0f), make_float3(15.f, 15.f, 15.f));
     optix::Buffer plight_buffer = context->createBuffer(RT_BUFFER_INPUT);
     plight_buffer->setFormat(RT_FORMAT_USER);
     plight_buffer->setElementSize(sizeof(grpt::point_light));
     plight_buffer->setSize(0);
 
-    memcpy(plight_buffer->map(), &light, sizeof(plight));
+    memcpy(plight_buffer->map(), &scene.point_ls[0], sizeof(scene.point_ls[0]));
     plight_buffer->unmap();
     context["point_lights"]->setBuffer(plight_buffer);
 }
@@ -225,7 +223,6 @@ void loadGeometry()
     auto dir_home = current_path.parent_path();
 
     auto lamb = dir_home.parent_path() / "src" / "shading_models" / "lambertian.cu";
-    std::cout << lamb.string() << '\n';
     assert(std::experimental::filesystem::exists(lamb));
 
     // Set up material
@@ -241,7 +238,7 @@ void loadGeometry()
     diffuse_light->setClosestHitProgram( 0, diffuse_em );
 
     // Set up parallelogram programs
-    ptx = sutil::getPtxString( SAMPLE_NAME, "../parallelogram.cu" );
+    ptx = sutil::getPtxString( SAMPLE_NAME, "../src/shapes/parallelogram.cu" );
     pgram_bounding_box = context->createProgramFromPTXString( ptx, "bounds" );
     pgram_intersection = context->createProgramFromPTXString( ptx, "intersect" );
 
@@ -592,8 +589,6 @@ int main( int argc, char** argv )
 
     try
     {
-        std::cout << "hi\n";
-
 //        glutInitialize( &argc, argv );
 
 #ifndef __APPLE__
@@ -613,7 +608,6 @@ int main( int argc, char** argv )
         }
         else
         {
-            std::cout << "hi" << '\n';
             auto begin = std::chrono::system_clock::now();
             updateCamera();
             context->launch( 0, width, height );
@@ -623,8 +617,8 @@ int main( int argc, char** argv )
                           std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " ms.\n";
 
             sutil::displayBufferPPM( std::string{"../output" + std::to_string(sqrt_num_samples) + ".ppm"}.c_str(), getOutputBuffer(), false );
-            std::cout << getOutputBuffer() << '\n';
             destroyContext();
+            std::cout << "done\n";
         }
 
         return 0;

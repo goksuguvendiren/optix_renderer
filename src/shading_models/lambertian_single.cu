@@ -4,7 +4,7 @@
 
 #include <optixu/optixu_math_namespace.h>
 #include "../../optixPathTracer.h"
-#include "../../include/point_light.hpp"
+#include "include/light_sources/point.hpp"
 #include "random.h"
 
 struct PerRayData_pathtrace_shadow

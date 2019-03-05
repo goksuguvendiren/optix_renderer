@@ -33,7 +33,7 @@ namespace grpt
 
             camera_rotate  = optix::Matrix4x4::identity();
         }
-        camera(const optix::float3& up, const optix::float3& lookat, const optix::float3& eye, const optix::Matrix4x4& rotate) : camera_up(up), camera_lookat(lookat), camera_eye(eye), camera_rotate(rotate)
+        camera(const optix::float3& eye, const optix::float3& lookat, const optix::float3& up, const optix::Matrix4x4& rotate) : camera_up(up), camera_lookat(lookat), camera_eye(eye), camera_rotate(rotate)
         {}
 
         int         frame_number = 0;
