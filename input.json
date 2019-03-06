@@ -23,5 +23,13 @@
                 "Emission" : [15.0, 15.0, 5.0]
             }
         }
-    ]
+    ],
+    "Plane":
+    {
+        "Width"  : 512,
+        "Height" : 512
+    },
+    "SPP" : 100,
+    "BadColor" : [1000000.0, 0.0, 1000000.0],
+    "BackgroundColor" : [0, 0, 0]
 }

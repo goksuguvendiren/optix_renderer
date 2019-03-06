@@ -50,7 +50,44 @@ rtDeclareVariable(PerRayData_pathtrace, current_prd, rtPayload, );
 rtBuffer<grpt::area_light>       lights;
 rtBuffer<grpt::point_light>      point_lights;
 
+
 RT_PROGRAM void diffuse()
+{
+    optix::float3 world_geo_normal   = optix::normalize( rtTransformNormal( RT_OBJECT_TO_WORLD, geometric_normal ) );
+    optix::float3 world_shade_normal = optix::normalize( rtTransformNormal( RT_OBJECT_TO_WORLD, shading_normal ) );
+    optix::float3 ffnormal           = optix::faceforward( world_shade_normal, -ray.direction, world_geo_normal );
+
+    float3 Ka = optix::make_float3( 0.3f, 0.3f, 0.3f );
+    float3 Kd = optix::make_float3( 0.6f, 0.7f, 0.8f );
+    float3 ambient_color = optix::make_float3( 0.31f, 0.33f, 0.28f );
+
+//    box_matl["Ka"]->setFloat( 0.3f, 0.3f, 0.3f );
+//    box_matl["Kd"]->setFloat( 0.6f, 0.7f, 0.8f );
+//    box_matl["Ks"]->setFloat( 0.8f, 0.9f, 0.8f );
+//    box_matl["phong_exp"]->setFloat( 88 );
+
+    //ambient
+    optix::float3 result = Ka * ambient_color * diffuse_color;
+    optix::float3 hit_point = ray.origin + t_hit * ray.direction;
+
+    for (int i = 0; i < point_lights.size(); ++i)
+    {
+        grpt::point_light light = point_lights[i];
+
+        optix::float3 L = optix::normalize(light.Position() - hit_point);
+        float cos_theta = optix::dot(L, ffnormal);
+
+        if (cos_theta > 0)
+        {
+            result += Ka * cos_theta * light.Emission();
+        }
+    }
+
+    current_prd.result = result;
+}
+
+
+RT_PROGRAM void diffuse_path()
 {
     float3 world_shading_normal   = optix::normalize( rtTransformNormal( RT_OBJECT_TO_WORLD, shading_normal ) );
     float3 world_geometric_normal = optix::normalize( rtTransformNormal( RT_OBJECT_TO_WORLD, geometric_normal ) );

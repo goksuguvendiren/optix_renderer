@@ -39,22 +39,17 @@
 
 using namespace optix;
 
-const char* const SAMPLE_NAME = "optixPathTracer";
-
 //------------------------------------------------------------------------------
 //
 // Globals
 //
 //------------------------------------------------------------------------------
 
-Context        context = 0;
-uint32_t       width  = 512;
-uint32_t       height = 512;
 bool           use_pbo = true;
 bool           progressive = false;
 
 unsigned int   frame_number = 1;
-unsigned int   sqrt_num_samples = 10;
+//unsigned int   sqrt_num_samples = 10;
 int            rr_begin_depth = 1;
 Program        pgram_intersection = 0;
 Program        pgram_bounding_box = 0;
@@ -81,7 +76,7 @@ auto scene = parser.LoadFromJson("../../input.json");
 //------------------------------------------------------------------------------
 
 Buffer getOutputBuffer();
-void destroyContext();
+//void destroyContext();
 void registerExitHandler();
 void createContext();
 void loadGeometry();
@@ -105,18 +100,19 @@ void glutResize( int w, int h );
 
 Buffer getOutputBuffer()
 {
-    return context[ "output_buffer" ]->getBuffer();
+//    return context[ "output_buffer" ]->getBuffer();
+    return scene.ctx()[ "output_buffer" ]->getBuffer();
 }
 
 
-void destroyContext()
-{
-    if( context )
-    {
-        context->destroy();
-        context = 0;
-    }
-}
+//void destroyContext()
+//{
+//    if( context )
+//    {
+//        context->destroy();
+//        context = 0;
+//    }
+//}
 
 
 void registerExitHandler()
@@ -124,8 +120,8 @@ void registerExitHandler()
     // register shutdown handler
 #ifdef _WIN32
     glutCloseFunc( destroyContext );  // this function is freeglut-only
-#else
-    atexit( destroyContext );
+//#else
+//    atexit( destroyContext );
 #endif
 }
 
@@ -146,7 +142,7 @@ GeometryInstance createParallelogram(
         const float3& offset1,
         const float3& offset2)
 {
-    Geometry parallelogram = context->createGeometry();
+    Geometry parallelogram = scene.ctx()->createGeometry();
     parallelogram->setPrimitiveCount( 1u );
     parallelogram->setIntersectionProgram( pgram_intersection );
     parallelogram->setBoundingBoxProgram( pgram_bounding_box );
@@ -163,35 +159,35 @@ GeometryInstance createParallelogram(
     parallelogram["v1"]->setFloat( v1 );
     parallelogram["v2"]->setFloat( v2 );
 
-    GeometryInstance gi = context->createGeometryInstance();
+    GeometryInstance gi = scene.ctx()->createGeometryInstance();
     gi->setGeometry(parallelogram);
     return gi;
 }
 
 void createContext()
 {
-    context = Context::create();
-    context->setRayTypeCount( 2 );
-    context->setEntryPointCount( 1 );
-    context->setStackSize( 1800 );
-
-    context[ "scene_epsilon"                  ]->setFloat( 1.e-3f );
-    context[ "pathtrace_ray_type"             ]->setUint( 0u );
-    context[ "pathtrace_shadow_ray_type"      ]->setUint( 1u );
-    context[ "rr_begin_depth"                 ]->setUint( rr_begin_depth );
-
-    Buffer buffer = sutil::createOutputBuffer( context, RT_FORMAT_FLOAT4, width, height, use_pbo );
-    context["output_buffer"]->set( buffer );
-
-    // Setup programs
-    const char *ptx = sutil::getPtxString( SAMPLE_NAME, "../optixPathTracer.cu" );
-    context->setRayGenerationProgram( 0, context->createProgramFromPTXString( ptx, "pathtrace_camera" ) );
-    context->setExceptionProgram( 0, context->createProgramFromPTXString( ptx, "exception" ) );
-    context->setMissProgram( 0, context->createProgramFromPTXString( ptx, "miss" ) );
-
-    context[ "sqrt_num_samples" ]->setUint( sqrt_num_samples );
-    context[ "bad_color"        ]->setFloat( 1000000.0f, 0.0f, 1000000.0f ); // Super magenta to make sure it doesn't get averaged out in the progressive rendering.
-    context[ "bg_color"         ]->setFloat( make_float3(0.0f) );
+//    context = Context::create();
+//    context->setRayTypeCount( 2 );
+//    context->setEntryPointCount( 1 );
+//    context->setStackSize( 1800 );
+//
+//    context[ "scene_epsilon"                  ]->setFloat( 1.e-3f );
+//    context[ "pathtrace_ray_type"             ]->setUint( 0u );
+//    context[ "pathtrace_shadow_ray_type"      ]->setUint( 1u );
+//    context[ "rr_begin_depth"                 ]->setUint( rr_begin_depth );
+//
+//    Buffer buffer = sutil::createOutputBuffer( context, RT_FORMAT_FLOAT4, scene.width, scene.height, use_pbo );
+//    context["output_buffer"]->set( buffer );
+//
+//    // Setup programs
+//    const char *ptx = sutil::getPtxString( sample_name.c_str(), "../optixPathTracer.cu" );
+//    context->setRayGenerationProgram( 0, context->createProgramFromPTXString( ptx, "pathtrace_camera" ) );
+//    context->setExceptionProgram( 0, context->createProgramFromPTXString( ptx, "exception" ) );
+//    context->setMissProgram( 0, context->createProgramFromPTXString( ptx, "miss" ) );
+//
+//    context[ "sqrt_num_samples" ]->setUint( std::sqrt(scene.spp) );
+//    context[ "bad_color"        ]->setFloat( scene.bad_color ); // Super magenta to make sure it doesn't get averaged out in the progressive rendering.
+//    context[ "bg_color"         ]->setFloat( scene.bg_color );
 }
 
 void loadLight()
@@ -199,48 +195,48 @@ void loadLight()
     // Light buffer
     grpt::area_light& light = scene.area_ls[0];
 
-    Buffer light_buffer = context->createBuffer(RT_BUFFER_INPUT);
+    Buffer light_buffer = scene.ctx()->createBuffer(RT_BUFFER_INPUT);
     light_buffer->setFormat(RT_FORMAT_USER);
     light_buffer->setElementSize(sizeof(grpt::area_light));
     light_buffer->setSize(1u);
     memcpy(light_buffer->map(), &light, sizeof(light));
     light_buffer->unmap();
-    context["lights"]->setBuffer(light_buffer);
+    scene.ctx()["lights"]->setBuffer(light_buffer);
 
-    optix::Buffer plight_buffer = context->createBuffer(RT_BUFFER_INPUT);
+    optix::Buffer plight_buffer = scene.ctx()->createBuffer(RT_BUFFER_INPUT);
     plight_buffer->setFormat(RT_FORMAT_USER);
     plight_buffer->setElementSize(sizeof(grpt::point_light));
-    plight_buffer->setSize(0);
+    plight_buffer->setSize(1u);
 
     memcpy(plight_buffer->map(), &scene.point_ls[0], sizeof(scene.point_ls[0]));
     plight_buffer->unmap();
-    context["point_lights"]->setBuffer(plight_buffer);
+    scene.ctx()["point_lights"]->setBuffer(plight_buffer);
 }
 
 void loadGeometry()
 {
-    auto current_path = std::experimental::filesystem::current_path();
-    auto dir_home = current_path.parent_path();
-
-    auto lamb = dir_home.parent_path() / "src" / "shading_models" / "lambertian.cu";
-    assert(std::experimental::filesystem::exists(lamb));
+//    auto current_path = std::experimental::filesystem::current_path();
+//    auto dir_home = current_path.parent_path();
+//
+//    auto lamb = dir_home.parent_path() / "src" / "shading_models" / "lambertian.cu";
+//    assert(std::experimental::filesystem::exists(lamb));
 
     // Set up material
-    Material diffuse = context->createMaterial();
-    const char *ptx = sutil::getPtxString( SAMPLE_NAME, "../src/shading_models/lambertian.cu" );
-    Program diffuse_ch = context->createProgramFromPTXString( ptx, "diffuse" );
-    Program diffuse_ah = context->createProgramFromPTXString( ptx, "shadow" );
+    Material diffuse = scene.ctx()->createMaterial();
+    const char *ptx = sutil::getPtxString( scene.sample_name.c_str(), "../src/shading_models/lambertian.cu" );
+    Program diffuse_ch = scene.ctx()->createProgramFromPTXString( ptx, "diffuse" );
+    Program diffuse_ah = scene.ctx()->createProgramFromPTXString( ptx, "shadow" );
     diffuse->setClosestHitProgram( 0, diffuse_ch );
     diffuse->setAnyHitProgram( 1, diffuse_ah );
 
-    Material diffuse_light = context->createMaterial();
-    Program diffuse_em = context->createProgramFromPTXString( ptx, "diffuseEmitter" );
+    Material diffuse_light = scene.ctx()->createMaterial();
+    Program diffuse_em = scene.ctx()->createProgramFromPTXString( ptx, "diffuseEmitter" );
     diffuse_light->setClosestHitProgram( 0, diffuse_em );
 
     // Set up parallelogram programs
-    ptx = sutil::getPtxString( SAMPLE_NAME, "../src/shapes/parallelogram.cu" );
-    pgram_bounding_box = context->createProgramFromPTXString( ptx, "bounds" );
-    pgram_intersection = context->createProgramFromPTXString( ptx, "intersect" );
+    ptx = sutil::getPtxString( scene.sample_name.c_str(), "../src/shapes/parallelogram.cu" );
+    pgram_bounding_box = scene.ctx()->createProgramFromPTXString( ptx, "bounds" );
+    pgram_intersection = scene.ctx()->createProgramFromPTXString( ptx, "intersect" );
 
     // create geometry instances
     std::vector<GeometryInstance> gis;
@@ -325,9 +321,9 @@ void loadGeometry()
     setMaterial(gis.back(), diffuse, "diffuse_color", white);
 
     // Create shadow group (no light)
-    GeometryGroup shadow_group = context->createGeometryGroup(gis.begin(), gis.end());
-    shadow_group->setAcceleration( context->createAcceleration( "Trbvh" ) );
-    context["top_shadower"]->set( shadow_group );
+    GeometryGroup shadow_group = scene.ctx()->createGeometryGroup(gis.begin(), gis.end());
+    shadow_group->setAcceleration( scene.ctx()->createAcceleration( "Trbvh" ) );
+    scene.ctx()["top_shadower"]->set( shadow_group );
 
     // Light
     gis.push_back( createParallelogram( make_float3( 343.0f, 548.6f, 227.0f),
@@ -336,9 +332,9 @@ void loadGeometry()
     setMaterial(gis.back(), diffuse_light, "emission_color", light_em);
 
     // Create geometry group
-    GeometryGroup geometry_group = context->createGeometryGroup(gis.begin(), gis.end());
-    geometry_group->setAcceleration( context->createAcceleration( "Trbvh" ) );
-    context["top_object"]->set( geometry_group );
+    GeometryGroup geometry_group = scene.ctx()->createGeometryGroup(gis.begin(), gis.end());
+    geometry_group->setAcceleration( scene.ctx()->createAcceleration( "Trbvh" ) );
+    scene.ctx()["top_object"]->set( geometry_group );
 }
 
 grpt::camera camera;
@@ -356,7 +352,7 @@ void setupCamera()
 void updateCamera()
 {
     const float fov  = 35.0f;
-    const float aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
+    const float aspect_ratio = static_cast<float>(scene.width) / static_cast<float>(scene.height);
     
     float3 camera_u, camera_v, camera_w;
 //    sutil::calculateCameraVariables(
@@ -389,11 +385,11 @@ void updateCamera()
         frame_number = 1;
     camera_changed = false;
 
-    context[ "frame_number" ]->setUint( frame_number++ );
-    context[ "eye"]->setFloat( camera_eye );
-    context[ "U"  ]->setFloat( camera_u );
-    context[ "V"  ]->setFloat( camera_v );
-    context[ "W"  ]->setFloat( camera_w );
+    scene.ctx()[ "frame_number" ]->setUint( frame_number++ );
+    scene.ctx()[ "eye"]->setFloat( camera_eye );
+    scene.ctx()[ "U"  ]->setFloat( camera_u );
+    scene.ctx()[ "V"  ]->setFloat( camera_v );
+    scene.ctx()[ "W"  ]->setFloat( camera_w );
 }
 
 
@@ -401,9 +397,9 @@ void glutInitialize( int* argc, char** argv )
 {
     glutInit( argc, argv );
     glutInitDisplayMode( GLUT_RGB | GLUT_ALPHA | GLUT_DEPTH | GLUT_DOUBLE );
-    glutInitWindowSize( width, height );
-    glutInitWindowPosition( 100, 100 );                                               
-    glutCreateWindow( SAMPLE_NAME );
+    glutInitWindowSize( scene.width, scene.height );
+    glutInitWindowPosition( 100, 100 );
+    glutCreateWindow( scene.sample_name.c_str() );
     glutHideWindow();                                                              
 }
 
@@ -418,10 +414,10 @@ void glutRun()
     glMatrixMode(GL_MODELVIEW);                                                    
     glLoadIdentity();                                                              
 
-    glViewport(0, 0, width, height);                                 
+    glViewport(0, 0, scene.width, scene.height);
 
     glutShowWindow();                                                              
-    glutReshapeWindow( width, height);
+    glutReshapeWindow( scene.width, scene.height);
 
     // register glut callbacks
     glutDisplayFunc( glutDisplay );
@@ -446,7 +442,7 @@ void glutRun()
 void glutDisplay()
 {
     updateCamera();
-    context->launch( 0, width, height );
+    scene.ctx()->launch( 0, scene.width, scene.height );
 
     sutil::displayBufferGL( getOutputBuffer() );
 
@@ -467,12 +463,12 @@ void glutKeyboardPress( unsigned char k, int x, int y )
         case( 'q' ):
         case( 27 ): // ESC
         {
-            destroyContext();
+//            destroyContext();
             exit(0);
         }
         case( 's' ):
         {
-            const std::string outputImage = std::string(SAMPLE_NAME) + ".ppm";
+            const std::string outputImage = std::string(scene.sample_name.c_str()) + ".ppm";
             std::cerr << "Saving current frame to '" << outputImage << "'\n";
             sutil::displayBufferPPM( outputImage.c_str(), getOutputBuffer(), false );
             break;
@@ -500,9 +496,9 @@ void glutMouseMotion( int x, int y)
     if( mouse_button == GLUT_RIGHT_BUTTON )
     {
         const float dx = static_cast<float>( x - mouse_prev_pos.x ) /
-                         static_cast<float>( width );
+                         static_cast<float>( scene.width );
         const float dy = static_cast<float>( y - mouse_prev_pos.y ) /
-                         static_cast<float>( height );
+                         static_cast<float>( scene.height );
         const float dmax = fabsf( dx ) > fabs( dy ) ? dx : dy;
         const float scale = std::min<float>( dmax, 0.9f );
         camera_eye = camera_eye + (camera_lookat - camera_eye)*scale;
@@ -515,8 +511,8 @@ void glutMouseMotion( int x, int y)
         const float2 to   = { static_cast<float>(x),
                               static_cast<float>(y) };
 
-        const float2 a = { from.x / width, from.y / height };
-        const float2 b = { to.x   / width, to.y   / height };
+        const float2 a = { from.x / scene.width, from.y / scene.height };
+        const float2 b = { to.x   / scene.width, to.y   / scene.height };
 
         camera_rotate = arcball.rotate( b, a );
         camera_changed = true;
@@ -528,17 +524,17 @@ void glutMouseMotion( int x, int y)
 
 void glutResize( int w, int h )
 {
-    if ( w == (int)width && h == (int)height ) return;
+    if ( w == (int)scene.width && h == (int)scene.height ) return;
 
     camera_changed = true;
 
-    width  = w;
-    height = h;
-    sutil::ensureMinimumSize(width, height);
+    scene.width  = w;
+    scene.height = h;
+    sutil::ensureMinimumSize(scene.width, scene.height);
 
-    sutil::resizeBuffer( getOutputBuffer(), width, height );
+    sutil::resizeBuffer( getOutputBuffer(), scene.width, scene.height );
 
-    glViewport(0, 0, width, height);
+    glViewport(0, 0, scene.width, scene.height);
 
     glutPostRedisplay();
 }
@@ -561,14 +557,14 @@ int main( int argc, char** argv )
 
         if( arg == "-h" || arg == "--help" )
         {
-            grpt::utils::printUsageAndExit( argv[0], SAMPLE_NAME);
+            grpt::utils::printUsageAndExit( argv[0], scene.sample_name.c_str());
         }
         else if( arg == "-f" || arg == "--file"  )
         {
             if( i == argc-1 )
             {
                 std::cerr << "Option '" << arg << "' requires additional argument.\n";
-                grpt::utils::printUsageAndExit( argv[0], SAMPLE_NAME );
+                grpt::utils::printUsageAndExit( argv[0], scene.sample_name.c_str() );
             }
             out_file = argv[++i];
         }
@@ -583,7 +579,7 @@ int main( int argc, char** argv )
         else
         {
             std::cerr << "Unknown option '" << arg << "'\n";
-            grpt::utils::printUsageAndExit( argv[0], SAMPLE_NAME );
+            grpt::utils::printUsageAndExit( argv[0], scene.sample_name.c_str() );
         }
     }
 
@@ -600,7 +596,7 @@ int main( int argc, char** argv )
         loadLight();
         loadGeometry();
 
-        context->validate();
+        scene.ctx()->validate();
 
         if ( progressive )
         {
@@ -610,19 +606,19 @@ int main( int argc, char** argv )
         {
             auto begin = std::chrono::system_clock::now();
             updateCamera();
-            context->launch( 0, width, height );
+            scene.ctx()->launch( 0, scene.width, scene.height );
             auto end = std::chrono::system_clock::now();
 
-            std::cout << "Rendering " << sqrt_num_samples * sqrt_num_samples << " samples per pixel took : " <<
+            std::cout << "Rendering " << scene.spp << " samples per pixel took : " <<
                           std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " ms.\n";
 
-            sutil::displayBufferPPM( std::string{"../output" + std::to_string(sqrt_num_samples) + ".ppm"}.c_str(), getOutputBuffer(), false );
-            destroyContext();
+            sutil::displayBufferPPM( std::string{"../output" + std::to_string(scene.spp) + ".ppm"}.c_str(), getOutputBuffer(), false );
+//            destroyContext();
             std::cout << "done\n";
         }
 
         return 0;
     }
-    SUTIL_CATCH( context->get() )
+    SUTIL_CATCH( scene.ctx()->get() )
 }
 

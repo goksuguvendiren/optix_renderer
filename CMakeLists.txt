@@ -333,6 +333,7 @@ if(GLUT_FOUND AND OPENGL_FOUND)
 
         src/utils.cpp
         src/camera.cpp
+        src/ctx.cpp
         main.cpp
     )
 

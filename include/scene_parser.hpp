@@ -62,7 +62,14 @@ namespace grpt
             sc.add_camera(load_camera(j["Camera"]));
             sc.add_point_light(load_point_light(j["Lights"][0]["PointLight"]));
             sc.add_area_light(load_area_light(j["Lights"][1]["AreaLight"]));
+            sc.width  = j["Plane"]["Width"];
+            sc.height = j["Plane"]["Height"];
+            sc.spp    = j["SPP"];
+            sc.bad_color = get_float3(j["BadColor"]);
+            sc.bg_color  = get_float3(j["BackgroundColor"]);
+            sc.sample_name = "optixPathTracer";
 
+            sc.init();
             return sc;
         }
     };
