@@ -59,6 +59,8 @@ RT_PROGRAM void diffuse()
 
     float3 Ka = optix::make_float3( 0.3f, 0.3f, 0.3f );
     float3 Kd = optix::make_float3( 0.6f, 0.7f, 0.8f );
+    float3 Ks = optix::make_float3( 0.8f, 0.9f, 0.8f );
+    float  phong_exp = 88;
     float3 ambient_color = optix::make_float3( 0.31f, 0.33f, 0.28f );
 
 //    box_matl["Ka"]->setFloat( 0.3f, 0.3f, 0.3f );
@@ -79,7 +81,16 @@ RT_PROGRAM void diffuse()
 
         if (cos_theta > 0)
         {
+            // diffuse term
             result += Ka * cos_theta * light.Emission();
+
+            // specular term
+            optix::float3 H = optix::normalize(L - ray.direction);
+            float cos_alpha = optix::dot(H, ffnormal);
+            if (cos_alpha > 0)
+            {
+                result += Ks * light.Emission() * pow(cos_alpha, phong_exp);
+            }
         }
     }
 
