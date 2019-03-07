@@ -3,7 +3,7 @@
 //
 
 #include <camera.hpp>
-#include <app.hpp>
+//#include <app.hpp>
 
 #include <tuple>
 

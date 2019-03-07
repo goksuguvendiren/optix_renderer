@@ -52,6 +52,21 @@ namespace grpt
             return {corner, v1, v2, ems};
         }
 
+        std::vector<grpt::parallelogram> load_parallelogram(nlohmann::json& j)
+        {
+            std::vector<grpt::parallelogram> pgs;
+
+            for (auto pg : j["Parallelograms"])
+            {
+                auto anchor = get_float3(pg["anchor"]);
+                auto v1 = get_float3(pg["v1"]);
+                auto v2 = get_float3(pg["v2"]);
+                pgs.emplace_back(anchor, v1, v2, pg["material"], optix::make_float3(0.43f));
+            }
+
+            return pgs;
+        }
+
         grpt::scene LoadFromJson(const std::string& json_path)
         {
             std::ifstream i(json_path);
@@ -70,6 +85,11 @@ namespace grpt
             sc.sample_name = "optixPathTracer";
 
             sc.init();
+
+            //TODO : load vertices and indices from the json.
+
+            sc.add_geometry(load_parallelogram(j["Geometry"]));
+
             return sc;
         }
     };

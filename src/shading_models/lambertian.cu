@@ -46,8 +46,9 @@ rtDeclareVariable(float,         scene_epsilon, , );
 rtDeclareVariable(rtObject,      top_object, , );
 
 rtDeclareVariable(PerRayData_pathtrace, current_prd, rtPayload, );
+rtDeclareVariable(PerRayData_pathtrace_shadow, prd_shadow, rtPayload, );
 
-rtBuffer<grpt::area_light>       lights;
+rtBuffer<grpt::area_light>       area_lights;
 rtBuffer<grpt::point_light>      point_lights;
 
 
@@ -63,11 +64,6 @@ RT_PROGRAM void diffuse()
     float  phong_exp = 88;
     float3 ambient_color = optix::make_float3( 0.31f, 0.33f, 0.28f );
 
-//    box_matl["Ka"]->setFloat( 0.3f, 0.3f, 0.3f );
-//    box_matl["Kd"]->setFloat( 0.6f, 0.7f, 0.8f );
-//    box_matl["Ks"]->setFloat( 0.8f, 0.9f, 0.8f );
-//    box_matl["phong_exp"]->setFloat( 88 );
-
     //ambient
     optix::float3 result = Ka * ambient_color * diffuse_color;
     optix::float3 hit_point = ray.origin + t_hit * ray.direction;
@@ -76,7 +72,16 @@ RT_PROGRAM void diffuse()
     {
         grpt::point_light light = point_lights[i];
 
+        PerRayData_pathtrace_shadow shadow_payload;
+        shadow_payload.inShadow = false;
+        //TODO : try the other way
+        float light_distance = optix::length(light.Position() - hit_point);
         optix::float3 L = optix::normalize(light.Position() - hit_point);
+        optix::Ray shadow_ray = optix::make_Ray(hit_point, L, 1, scene_epsilon, light_distance);
+        rtTrace(top_object, shadow_ray, shadow_payload);
+
+        if (shadow_payload.inShadow) continue;
+
         float cos_theta = optix::dot(L, ffnormal);
 
         if (cos_theta > 0)
@@ -127,13 +132,13 @@ RT_PROGRAM void diffuse_path()
     //
     // Next event estimation (compute direct lighting).
     //
-    unsigned int num_lights = lights.size();
+    unsigned int num_lights = area_lights.size();
     float3 result = make_float3(0.0f);
 
     for(int i = 0; i < num_lights; ++i)
     {
         // Choose random point on light
-        grpt::area_light light = lights[i];
+        grpt::area_light light = area_lights[i];
         const float z1 = rnd(current_prd.seed);
         const float z2 = rnd(current_prd.seed);
         const float3 light_pos = light.corner + light.v1 * z1 + light.v2 * z2;

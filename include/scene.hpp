@@ -14,15 +14,19 @@ namespace grpt
     class scene
     {
         std::vector<camera> cameras;
-        grpt::ctx cont;
+        std::vector<optix::float3> vertices;
+        std::vector<unsigned int>  indices;
+        std::vector<grpt::parallelogram>  parallelograms;
 
     public:
         scene() = default;
         scene(scene&&) = default;
 
         void add_camera(grpt::camera&& cam) { cameras.push_back(std::move(cam)); }
-        void add_point_light(grpt::point_light&& l) { point_ls.push_back(std::move(l)); }
-        void add_area_light(grpt::area_light&& l) { area_ls.push_back(std::move(l)); }
+        void add_point_light(grpt::point_light&& l) { point_ls.push_back(l); }
+        void add_area_light(grpt::area_light&& l) { area_ls.push_back(l); }
+        void add_geometry(std::vector<grpt::parallelogram> pgs);
+
         std::vector<point_light> point_ls;
         std::vector<area_light> area_ls;
 
@@ -34,10 +38,11 @@ namespace grpt
         optix::float3 bad_color;
         optix::float3 bg_color;
 
+        grpt::ctx cont;
         optix::Context& ctx() { return cont.get(); };
 
         std::string sample_name;
 
-        void init() { cont.init(*this); }
+        void init();
     };
 }

@@ -47,7 +47,7 @@ rtDeclareVariable(rtObject,      top_object, , );
 
 rtDeclareVariable(PerRayData_pathtrace, current_prd, rtPayload, );
 
-rtBuffer<ParallelogramLight>     lights;
+rtBuffer<ParallelogramLight>     area_lights;
 rtBuffer<grpt::point_light>      point_lights;
 
 RT_PROGRAM void diffuse()
@@ -77,7 +77,7 @@ RT_PROGRAM void diffuse()
     //
     // Next event estimation (compute direct lighting).
     //
-    unsigned int num_lights = lights.size();
+    unsigned int num_lights = area_lights.size();
     float3 result = make_float3(0.0f);
 
     num_lights = point_lights.size();
