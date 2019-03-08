@@ -37,7 +37,7 @@ using namespace optix;
 const char* const SAMPLE_NAME = "optixMeshViewer";
 
 grpt::scene_parser parser;
-auto scene = parser.LoadFromJson("../../input.json");
+auto scene = parser.LoadFromJson("../../mesh_input.json");
 
 //------------------------------------------------------------------------------
 //
@@ -189,16 +189,23 @@ void loadMesh( const std::string& filename )
     scene.ctx()[ "top_shadower" ]->set( geometry_group );
 }
 
-
 void setupCamera()
 {
-    const float max_dim = fmaxf(aabb.extent(0), aabb.extent(1)); // max of x, y components
+    auto& camera = scene.get_camera();
 
-    camera_eye    = aabb.center() + make_float3( 0.0f, 0.0f, max_dim*1.5f );
-    camera_lookat = aabb.center();
-    camera_up     = make_float3( 0.0f, 1.0f, 0.0f );
+    camera_eye    = camera.eye();//make_float3( 278.0f, 273.0f, -900.0f );
+    camera_lookat = camera.lookat();//make_float3( 278.0f, 273.0f,    0.0f );
+    camera_up     = camera.up();//make_float3(   0.0f,   1.0f,    0.0f );
 
-    camera_rotate  = Matrix4x4::identity();
+    camera_rotate  = camera.rotate();//Matrix4x4::identity();
+//
+//    const float max_dim = fmaxf(aabb.extent(0), aabb.extent(1)); // max of x, y components
+//
+//    camera_eye    = aabb.center() + make_float3( 0.0f, 0.0f, max_dim*1.5f );
+//    camera_lookat = aabb.center();
+//    camera_up     = make_float3( 0.0f, 1.0f, 0.0f );
+//
+//    camera_rotate  = Matrix4x4::identity();
 }
 
 
@@ -206,25 +213,24 @@ void setupLights()
 {
     const float max_dim = fmaxf(aabb.extent(0), aabb.extent(1)); // max of x, y components
 
-    BasicLight lights[] = {
-            { make_float3( -0.5f,  0.25f, -1.0f ), make_float3( 0.2f, 0.2f, 0.25f ), 0, 0 },
-            { make_float3( -0.5f,  0.0f ,  1.0f ), make_float3( 0.1f, 0.1f, 0.10f ), 0, 0 },
-            { make_float3(  0.5f,  0.5f ,  0.5f ), make_float3( 0.7f, 0.7f, 0.65f ), 1, 0 }
+    grpt::point_light lights[] = {
+            { make_float3( -0.5f,  0.25f, -1.0f ), make_float3( 0.2f, 0.2f, 0.25f ) },
+            { make_float3( -0.5f,  0.0f ,  1.0f ), make_float3( 0.1f, 0.1f, 0.10f ) },
+            { make_float3(  0.5f,  0.5f ,  0.5f ), make_float3( 0.7f, 0.7f, 0.65f ) }
     };
-    lights[0].pos *= max_dim * 10.0f;
-    lights[1].pos *= max_dim * 10.0f;
-    lights[2].pos *= max_dim * 10.0f;
+    lights[0].position *= max_dim * 10.0f;
+    lights[1].position *= max_dim * 10.0f;
+    lights[2].position *= max_dim * 10.0f;
 
     Buffer light_buffer = scene.ctx()->createBuffer( RT_BUFFER_INPUT );
     light_buffer->setFormat( RT_FORMAT_USER );
-    light_buffer->setElementSize( sizeof( BasicLight ) );
+    light_buffer->setElementSize( sizeof( grpt::point_light ) );
     light_buffer->setSize( sizeof(lights)/sizeof(lights[0]) );
     memcpy(light_buffer->map(), lights, sizeof(lights));
     light_buffer->unmap();
 
-    scene.ctx()[ "lights" ]->set( light_buffer );
+    scene.ctx()[ "point_lights" ]->set( light_buffer );
 }
-
 
 void updateCamera()
 {

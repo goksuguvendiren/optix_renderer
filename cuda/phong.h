@@ -27,25 +27,28 @@
  */
 
 #include <optix_world.h>
+#include <../include/light_sources/point.hpp>
+#include <optix_cuda.h>
 #include "commonStructs.h"
 #include "helpers.h"
 
 struct PerRayData_radiance
 {
-  float3 result;
+  optix::float3 result;
   float importance;
   int depth;
 };
 
 struct PerRayData_shadow
 {
-  float3 attenuation;
+  optix::float3 attenuation;
 };
 
+using namespace optix;
 
 rtDeclareVariable(int,               max_depth, , );
-rtBuffer<BasicLight>                 lights;
-rtDeclareVariable(float3,            ambient_light_color, , );
+rtBuffer<grpt::point_light>          point_lights;
+rtDeclareVariable(optix::float3,     ambient_light_color, , );
 rtDeclareVariable(unsigned int,      radiance_ray_type, , );
 rtDeclareVariable(unsigned int,      shadow_ray_type, , );
 rtDeclareVariable(float,             scene_epsilon, , );
@@ -79,16 +82,16 @@ __device__ void phongShade( float3 p_Kd,
   float3 result = p_Ka * ambient_light_color;
 
   // compute direct lighting
-  unsigned int num_lights = lights.size();
+  unsigned int num_lights = point_lights.size();
   for(int i = 0; i < num_lights; ++i) {
-    BasicLight light = lights[i];
-    float Ldist = optix::length(light.pos - hit_point);
-    float3 L = optix::normalize(light.pos - hit_point);
+    grpt::point_light light = point_lights[i];
+    float Ldist = optix::length(light.position - hit_point);
+    float3 L = optix::normalize(light.position - hit_point);
     float nDl = optix::dot( p_normal, L);
 
     // cast shadow ray
     float3 light_attenuation = make_float3(static_cast<float>( nDl > 0.0f ));
-    if ( nDl > 0.0f && light.casts_shadow ) {
+    if ( nDl > 0.0f ) {
       PerRayData_shadow shadow_prd;
       shadow_prd.attenuation = make_float3(1.0f);
       optix::Ray shadow_ray = optix::make_Ray( hit_point, L, shadow_ray_type, scene_epsilon, Ldist );
@@ -98,7 +101,7 @@ __device__ void phongShade( float3 p_Kd,
 
     // If not completely shadowed, light the hit point
     if( fmaxf(light_attenuation) > 0.0f ) {
-      float3 Lc = light.color * light_attenuation;
+      float3 Lc = light.emission * light_attenuation;
 
       result += p_Kd * nDl * Lc;
 

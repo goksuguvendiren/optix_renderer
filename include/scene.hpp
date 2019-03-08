@@ -22,8 +22,9 @@ namespace grpt
         scene() = default;
         scene(scene&&) = default;
 
-        void add_camera(grpt::camera&& cam) { cameras.push_back(std::move(cam)); }
+        void add_camera(grpt::camera cam) { cameras.push_back(std::move(cam)); }
         void add_point_light(grpt::point_light&& l) { point_ls.push_back(l); }
+        void add_point_light(std::vector<grpt::point_light> pls) { point_ls = std::move(pls); }
         void add_area_light(grpt::area_light&& l) { area_ls.push_back(l); }
         void add_geometry(std::vector<grpt::parallelogram> pgs);
 
@@ -40,6 +41,8 @@ namespace grpt
 
         grpt::ctx cont;
         optix::Context& ctx() { return cont.get(); };
+
+        const grpt::camera& get_camera() const { return cameras[0]; }
 
         std::string sample_name;
 

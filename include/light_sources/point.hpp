@@ -10,11 +10,11 @@ namespace grpt
 {
     class point_light
     {
-        optix::float3 position;
-        optix::float3 emission;
-
     public:
         point_light(const optix::float3& pos, const optix::float3& intens) : position(pos), emission(intens) {}
+
+        optix::float3 position;
+        optix::float3 emission;
 
         optix::float3 Position()  const { return position; }
         optix::float3 Emission() const { return emission; }

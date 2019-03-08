@@ -74,20 +74,22 @@ void grpt::ctx::addPointLight(const std::vector<grpt::point_light> &pls)
 
     memcpy(plight_buffer->map(), &pls[0], sizeof(pls[0]));
     plight_buffer->unmap();
-    context["point_lights"]->setBuffer(plight_buffer);
+//    context["point_lights"]->setBuffer(plight_buffer);
 }
 
 void grpt::ctx::addAreaLight(const std::vector<grpt::area_light> &als)
 {
 //    grpt::area_light& light = scene.area_ls[0];
-
-    optix::Buffer light_buffer = context->createBuffer(RT_BUFFER_INPUT);
-    light_buffer->setFormat(RT_FORMAT_USER);
-    light_buffer->setElementSize(sizeof(grpt::area_light));
-    light_buffer->setSize(als.size());
-    memcpy(light_buffer->map(), &als[0], sizeof(als[0]));
-    light_buffer->unmap();
-    context["area_lights"]->setBuffer(light_buffer);
+    if (als.size() > 0)
+    {
+        optix::Buffer light_buffer = context->createBuffer(RT_BUFFER_INPUT);
+        light_buffer->setFormat(RT_FORMAT_USER);
+        light_buffer->setElementSize(sizeof(grpt::area_light));
+        light_buffer->setSize(als.size());
+        memcpy(light_buffer->map(), &als[0], sizeof(als[0]));
+        light_buffer->unmap();
+        context["area_lights"]->setBuffer(light_buffer);
+    }
 }
 
 optix::GeometryInstance grpt::ctx::get_instance(const grpt::parallelogram& pg)

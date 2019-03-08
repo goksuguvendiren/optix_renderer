@@ -32,15 +32,22 @@ namespace grpt
             auto at  = get_float3(j["Lookat"]);
             auto up  = get_float3(j["Up"]);
 
-            return {eye, at, up, optix::Matrix4x4::identity()};
+            return grpt::camera{eye, at, up, optix::Matrix4x4::identity()};
         }
 
-        grpt::point_light load_point_light(nlohmann::json& j)
+        std::vector<grpt::point_light> load_point_light(nlohmann::json& j)
         {
-            auto pos = get_float3(j["Position"]);
-            auto ems = get_float3(j["Emission"]);
+            std::cout << j.dump(4) << std::endl;
+            std::vector<grpt::point_light> pls;
+            for (auto pl : j)
+            {
+                auto pos = get_float3(pl["Position"]);
+                auto ems = get_float3(pl["Emission"]);
 
-            return {pos, ems};
+                pls.emplace_back(pos, ems);
+            }
+
+            return pls;
         }
 
         grpt::area_light load_area_light(nlohmann::json& j)
@@ -75,9 +82,10 @@ namespace grpt
             i >> j;
 
             scene sc;
-            sc.add_camera(load_camera(j["Camera"]));
-            sc.add_point_light(load_point_light(j["Lights"][0]["PointLight"]));
-            sc.add_area_light(load_area_light(j["Lights"][1]["AreaLight"]));
+            auto cam = load_camera(j["Camera"]);
+            sc.add_camera(cam);
+            sc.add_point_light(load_point_light(j["Lights"]["PointLights"]));
+//            sc.add_area_light(load_area_light(j["Lights"][1]["AreaLight"]));
             sc.width  = j["Plane"]["Width"];
             sc.height = j["Plane"]["Height"];
             sc.spp    = j["SPP"];
