@@ -67,14 +67,16 @@ void grpt::ctx::init(const grpt::scene& sc)
 
 void grpt::ctx::addPointLight(const std::vector<grpt::point_light> &pls)
 {
-    optix::Buffer plight_buffer = context->createBuffer(RT_BUFFER_INPUT);
-    plight_buffer->setFormat(RT_FORMAT_USER);
-    plight_buffer->setElementSize(sizeof(grpt::point_light));
-    plight_buffer->setSize(pls.size());
-
-    memcpy(plight_buffer->map(), &pls[0], sizeof(pls[0]));
-    plight_buffer->unmap();
-//    context["point_lights"]->setBuffer(plight_buffer);
+    if (pls.size() > 0)
+    {
+        optix::Buffer plight_buffer = context->createBuffer(RT_BUFFER_INPUT);
+        plight_buffer->setFormat(RT_FORMAT_USER);
+        plight_buffer->setElementSize(sizeof(grpt::point_light));
+        plight_buffer->setSize(pls.size());
+        memcpy(plight_buffer->map(), pls.data(), sizeof(pls[0]) * pls.size());
+        plight_buffer->unmap();
+        context["point_lights"]->setBuffer(plight_buffer);
+    }
 }
 
 void grpt::ctx::addAreaLight(const std::vector<grpt::area_light> &als)

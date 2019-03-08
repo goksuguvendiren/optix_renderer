@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <cstring>
+
 #include <ctx.hpp>
 #include <camera.hpp>
 #include <light_sources/point.hpp>
@@ -47,5 +49,10 @@ namespace grpt
         std::string sample_name;
 
         void init();
+
+        void set_buffer()
+        {
+            cont.addPointLight(point_ls);
+        }
     };
 }

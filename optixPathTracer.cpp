@@ -143,7 +143,6 @@ void registerExitHandler()
 void createContext( int usage_report_level, UsageReportLogger* logger )
 {
     // Set up context
-    scene.ctx() = Context::create();
     scene.ctx()->setRayTypeCount( 2 );
     scene.ctx()->setEntryPointCount( 1 );
     if( usage_report_level > 0 )
@@ -198,39 +197,8 @@ void setupCamera()
     camera_up     = camera.up();//make_float3(   0.0f,   1.0f,    0.0f );
 
     camera_rotate  = camera.rotate();//Matrix4x4::identity();
-//
-//    const float max_dim = fmaxf(aabb.extent(0), aabb.extent(1)); // max of x, y components
-//
-//    camera_eye    = aabb.center() + make_float3( 0.0f, 0.0f, max_dim*1.5f );
-//    camera_lookat = aabb.center();
-//    camera_up     = make_float3( 0.0f, 1.0f, 0.0f );
-//
-//    camera_rotate  = Matrix4x4::identity();
 }
 
-
-void setupLights()
-{
-    const float max_dim = fmaxf(aabb.extent(0), aabb.extent(1)); // max of x, y components
-
-    grpt::point_light lights[] = {
-            { make_float3( -0.5f,  0.25f, -1.0f ), make_float3( 0.2f, 0.2f, 0.25f ) },
-            { make_float3( -0.5f,  0.0f ,  1.0f ), make_float3( 0.1f, 0.1f, 0.10f ) },
-            { make_float3(  0.5f,  0.5f ,  0.5f ), make_float3( 0.7f, 0.7f, 0.65f ) }
-    };
-    lights[0].position *= max_dim * 10.0f;
-    lights[1].position *= max_dim * 10.0f;
-    lights[2].position *= max_dim * 10.0f;
-
-    Buffer light_buffer = scene.ctx()->createBuffer( RT_BUFFER_INPUT );
-    light_buffer->setFormat( RT_FORMAT_USER );
-    light_buffer->setElementSize( sizeof( grpt::point_light ) );
-    light_buffer->setSize( sizeof(lights)/sizeof(lights[0]) );
-    memcpy(light_buffer->map(), lights, sizeof(lights));
-    light_buffer->unmap();
-
-    scene.ctx()[ "point_lights" ]->set( light_buffer );
-}
 
 void updateCamera()
 {

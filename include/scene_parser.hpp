@@ -82,8 +82,8 @@ namespace grpt
             i >> j;
 
             scene sc;
-            auto cam = load_camera(j["Camera"]);
-            sc.add_camera(cam);
+            sc.add_camera(load_camera(j["Camera"]));
+            auto pls = load_point_light(j["Lights"]["PointLights"]);
             sc.add_point_light(load_point_light(j["Lights"]["PointLights"]));
 //            sc.add_area_light(load_area_light(j["Lights"][1]["AreaLight"]));
             sc.width  = j["Plane"]["Width"];
