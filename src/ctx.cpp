@@ -8,6 +8,7 @@
 #include <sutil.h>
 #include <include/ctx.hpp>
 #include <cstring>
+#include <vector>
 #include <include/shapes/parallelogram.hpp>
 
 grpt::ctx::ctx()
@@ -120,6 +121,12 @@ void set_material(optix::GeometryInstance& gi, optix::Material material, const s
     gi[color_name]->setFloat(color);
 }
 
+void set_material(optix::GeometryInstance& gi, optix::Material material, const std::vector<std::pair<std::string, optix::float3>>& colors)
+{
+    gi->addMaterial(material);
+    for (auto& color : colors)
+        gi[color.first]->setFloat(color.second);
+}
 
 void grpt::ctx::addParallelogram(const optix::float3 &anchor, const optix::float3 &o1, const optix::float3 &o2, const std::string& mat_name, const optix::float3 color)
 {
@@ -128,6 +135,8 @@ void grpt::ctx::addParallelogram(const optix::float3 &anchor, const optix::float
 
     auto mat = materials[mat_name];
     set_material(instance, mat, "diffuse_color", color);
+//    set_material(instance, mat, {{"diffuse_color", color}});
+
     gis.push_back(instance);
 }
 
@@ -137,6 +146,7 @@ void grpt::ctx::addParallelogram(grpt::parallelogram pg)
 
     auto mat = materials[pg.material];
     set_material(instance, mat, "diffuse_color", pg.color);
+//    set_material(instance, mat, {{"diffuse_color", pg.color}});
     gis.push_back(instance);
 }
 

@@ -9,6 +9,7 @@
 #include <scene.hpp>
 #include <json/json.hpp>
 #include "camera.hpp"
+#include <shapes/parallelogram.hpp>
 
 #include <optixu_math_namespace.h>
 
@@ -87,7 +88,6 @@ namespace grpt
             sc.init();
 
             //TODO : load vertices and indices from the json.
-
             sc.add_geometry(load_parallelogram(j["Geometry"]));
 
             return sc;
