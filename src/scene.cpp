@@ -44,3 +44,8 @@ void grpt::scene::add_geometry(std::vector<grpt::parallelogram> pgs)
 //    cont.createGeometryGroup(cont.gis, "top_shadower");
 //    cont.createGeometryGroup(cont.gis, "top_object");
 }
+
+void grpt::scene::add_geometry(std::vector<grpt::triangle_mesh> pgs)
+{
+    triangle_meshes = std::move(pgs);
+}

@@ -10,6 +10,7 @@
 #include <camera.hpp>
 #include <light_sources/point.hpp>
 #include <light_sources/area.hpp>
+#include <shapes/triangle_mesh.hpp>
 
 namespace grpt
 {
@@ -19,6 +20,7 @@ namespace grpt
         std::vector<optix::float3> vertices;
         std::vector<unsigned int>  indices;
         std::vector<grpt::parallelogram>  parallelograms;
+        std::vector<grpt::triangle_mesh>  triangle_meshes;
 
     public:
         scene() = default;
@@ -29,6 +31,7 @@ namespace grpt
         void add_point_light(std::vector<grpt::point_light> pls) { point_ls = std::move(pls); }
         void add_area_light(grpt::area_light&& l) { area_ls.push_back(l); }
         void add_geometry(std::vector<grpt::parallelogram> pgs);
+        void add_geometry(std::vector<grpt::triangle_mesh> pgs);
 
         std::vector<point_light> point_ls;
         std::vector<area_light> area_ls;

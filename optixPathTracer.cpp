@@ -101,12 +101,6 @@ Buffer getOutputBuffer()
     return scene.ctx()[ "output_buffer" ]->getBuffer();
 }
 
-
-void destroyContext()
-{
-}
-
-
 struct UsageReportLogger
 {
     void log( int lvl, const char* tag, const char* msg )
@@ -123,21 +117,6 @@ void usageReportCallback( int lvl, const char* tag, const char* msg, void* cbdat
 
     UsageReportLogger* logger = reinterpret_cast<UsageReportLogger*>( cbdata );
     logger->log( lvl, tag, msg );
-}
-
-void registerExitHandler()
-{
-    // register shutdown handler
-#ifdef _WIN32
-    glutCloseFunc( destroyContext );  // this function is freeglut-only
-#else
-    atexit( destroyContext );
-#endif
-}
-
-
-void createContext( int usage_report_level, UsageReportLogger* logger )
-{
 }
 
 void loadMesh( const std::string& filename )
@@ -166,7 +145,6 @@ void setupCamera()
     camera_rotate  = camera.rotate();//Matrix4x4::identity();
 }
 
-
 void updateCamera()
 {
     float3 camera_u, camera_v, camera_w;
@@ -186,7 +164,6 @@ void updateCamera()
     scene.ctx()[ "frame_number" ]->setUint( frame_number++ );
 }
 
-
 void glutInitialize( int* argc, char** argv )
 {
     glutInit( argc, argv );
@@ -196,7 +173,6 @@ void glutInitialize( int* argc, char** argv )
     glutCreateWindow( SAMPLE_NAME );
     glutHideWindow();
 }
-
 
 void glutRun()
 {
@@ -221,11 +197,8 @@ void glutRun()
     glutMouseFunc( glutMousePress );
     glutMotionFunc( glutMouseMotion );
 
-    registerExitHandler();
-
     glutMainLoop();
 }
-
 
 //------------------------------------------------------------------------------
 //
@@ -257,7 +230,6 @@ void glutKeyboardPress( unsigned char k, int x, int y )
         case( 'q' ):
         case( 27 ): // ESC
         {
-            destroyContext();
             exit(0);
         }
         case( 's' ):
@@ -396,7 +368,6 @@ int main( int argc, char** argv )
 #endif
 
         UsageReportLogger logger;
-        createContext( usage_report_level, &logger );
         loadMesh( mesh_file );
         setupCamera();
 
@@ -411,7 +382,6 @@ int main( int argc, char** argv )
             updateCamera();
             scene.ctx()->launch( 0, scene.width, scene.height );
             sutil::displayBufferPPM( std::string{"../output_mash_viewer.ppm"}.c_str(), getOutputBuffer() );
-            destroyContext();
         }
         return 0;
     }

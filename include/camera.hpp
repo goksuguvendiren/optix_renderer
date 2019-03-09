@@ -24,6 +24,8 @@ namespace grpt
         const float fov  = 35.0f;
         float aspect_ratio;
 
+        //TODO: read the fov from the json file.
+
     public:
         camera() : aspect_ratio(width / (float)height)
         {

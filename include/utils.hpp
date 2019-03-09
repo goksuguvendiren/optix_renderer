@@ -14,5 +14,7 @@ namespace grpt
         std::string cuda_to_string(const std::string& cuda_file);
         std::string compile_cuda_source(const std::string& path, const std::string& source);
         void printUsageAndExit( const std::string& argv0, const std::string& sample_name );
+        std::string getExtension( const std::string& filename );
+        std::string directoryOfFilePath( const std::string& filepath );
     }
 }

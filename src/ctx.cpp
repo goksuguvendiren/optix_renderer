@@ -58,7 +58,6 @@ void grpt::ctx::init(const grpt::scene& sc)
         ptx = sutil::getPtxString(sc.sample_name.c_str(), sc.miss_prog_path.c_str());
     context->setMissProgram( 0, context->createProgramFromPTXString( ptx, sc.miss_prog.c_str() ) );
 
-
     context[ "sqrt_num_samples" ]->setUint( std::sqrt(sc.spp) );
     context[ "bad_color"        ]->setFloat( sc.bad_color ); // Super magenta to make sure it doesn't get averaged out in the progressive rendering.
     context[ "bg_color"         ]->setFloat( sc.bg_color );
@@ -70,7 +69,7 @@ void grpt::ctx::init(const grpt::scene& sc)
 
 void grpt::ctx::addPointLight(const std::vector<grpt::point_light> &pls)
 {
-    if (pls.size() > 0)
+    if (!pls.empty())
     {
         optix::Buffer plight_buffer = context->createBuffer(RT_BUFFER_INPUT);
         plight_buffer->setFormat(RT_FORMAT_USER);
@@ -85,7 +84,7 @@ void grpt::ctx::addPointLight(const std::vector<grpt::point_light> &pls)
 void grpt::ctx::addAreaLight(const std::vector<grpt::area_light> &als)
 {
 //    grpt::area_light& light = scene.area_ls[0];
-    if (als.size() > 0)
+    if (!als.empty())
     {
         optix::Buffer light_buffer = context->createBuffer(RT_BUFFER_INPUT);
         light_buffer->setFormat(RT_FORMAT_USER);

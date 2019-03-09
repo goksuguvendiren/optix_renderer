@@ -75,6 +75,21 @@ namespace grpt
             return pgs;
         }
 
+//        std::vector<grpt::triangle_mesh> load_triangle_meshes(nlohmann::json& j)
+//        {
+//            std::vector<grpt::triangle_mesh> tms;
+//
+//            for (auto tm : j["TriangleMeshes"])
+//            {
+//                auto anchor = get_float3(tm["anchor"]);
+//                auto v1 = get_float3(tm["v1"]);
+//                auto v2 = get_float3(tm["v2"]);
+//                tms.emplace_back(anchor, v1, v2, tm["material"], optix::make_float3(0.43f));
+//            }
+//
+//            return tms;
+//        }
+
         grpt::scene LoadFromJson(const std::string& json_path)
         {
             std::ifstream i(json_path);
@@ -103,6 +118,7 @@ namespace grpt
 
             //TODO : load vertices and indices from the json.
             sc.add_geometry(load_parallelogram(j["Geometry"]));
+//            sc.add_geometry(load_triangle_meshes(j["Geometry"]));
 
             return sc;
         }

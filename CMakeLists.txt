@@ -329,6 +329,7 @@ if(GLUT_FOUND AND OPENGL_FOUND)
 
         # These files are common among multiple samples
         src/shapes/parallelogram.cu
+        src/shapes/triangle_mesh.cpp
         random.h
 
         src/utils.cpp
