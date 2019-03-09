@@ -25,6 +25,7 @@ namespace grpt
 
     class triangle_mesh
     {
+    public:
         struct mesh
         {
             struct Buffers
@@ -67,8 +68,7 @@ namespace grpt
         } m;
 
     void load_obj_file(const std::string& filename, const optix::Matrix4x4& xform);
-
-    public:
+    void unmap();
         // Input
         optix::Context               context;       // required
         optix::Material              material;      // optional single matl override

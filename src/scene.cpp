@@ -29,10 +29,11 @@ void grpt::scene::add_geometry(std::vector<grpt::parallelogram> pgs)
 
     std::string mesh_file = std::string( sutil::samplesDir() ) + "/data/cow.obj";
 
-    OptiXMesh mesh;
-    mesh.context = cont.get();
-    loadMesh( mesh_file, mesh );
+//    OptiXMesh mesh;
+//    mesh.context = cont.get();
+//    loadMesh( mesh_file, mesh );
 
+    grpt::triangle_mesh mesh(ctx(), mesh_file);
 //    aabb.set( mesh.bbox_min, mesh.bbox_max );
 
     optix::GeometryGroup geometry_group = cont.get()->createGeometryGroup();

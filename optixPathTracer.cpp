@@ -121,9 +121,11 @@ void usageReportCallback( int lvl, const char* tag, const char* msg, void* cbdat
 
 void loadMesh( const std::string& filename )
 {
-    OptiXMesh mesh;
-    mesh.context = scene.ctx();
-    loadMesh( filename, mesh );
+//    OptiXMesh mesh;
+//    mesh.context = scene.ctx();
+//    loadMesh( filename, mesh );
+
+    grpt::triangle_mesh mesh(scene.ctx(), filename);
 
     aabb.set( mesh.bbox_min, mesh.bbox_max );
 

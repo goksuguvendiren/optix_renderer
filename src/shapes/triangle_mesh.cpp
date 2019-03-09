@@ -2,9 +2,13 @@
 // Created by Göksu Güvendiren on 2019-03-08.
 //
 
+#include <cstring>
 #include <shapes/triangle_mesh.hpp>
 #include <include/shapes/triangle_mesh.hpp>
 #include <tinyobjloader/tiny_obj_loader.h>
+#include <optixu/optixu_math_namespace.h>
+#include <sutil.h>
+#include <Mesh.h>
 
 grpt::triangle_mesh::mesh::mesh(optix::Context& context, const std::string& filename)
 {
@@ -19,6 +23,23 @@ grpt::triangle_mesh::mesh::mesh(optix::Context& context, const std::string& file
 
     uint64_t num_groups_with_normals   = 0;
     uint64_t num_groups_with_texcoords = 0;
+
+    num_vertices  = 0;
+    positions = nullptr;
+
+    has_normals = false;
+    normals = nullptr;
+
+    has_texcoords = false;
+    texcoords = nullptr;
+
+    num_triangles = 0;
+    tri_indices = nullptr;
+    mat_indices = nullptr;
+
+    num_materials = 0;
+    mat_params = nullptr;
+
     for( std::vector<tinyobj::shape_t>::const_iterator it = m_shapes.begin();
          it < m_shapes.end();
          ++it )
@@ -201,7 +222,7 @@ void grpt::triangle_mesh::mesh::load(const std::string& filename)
 
     for( uint64_t i = 0; i < m_materials.size(); ++i )
     {
-        MaterialParams mps;
+        MaterialParams& mps = mat_params[i];
 
         mps.name   = m_materials[i].name;
         mps.Kd_map = m_materials[i].diffuse_texname.empty() ? "" :
@@ -224,8 +245,6 @@ void grpt::triangle_mesh::mesh::load(const std::string& filename)
         mps.Kr[2]  = m_materials[i].specular[2];
 
         mps.exp    = m_materials[i].shininess;
-
-        mat_params[i] = mps;
     }
 
 }
@@ -247,11 +266,11 @@ void grpt::triangle_mesh::mesh::load_xform(const float* load_xform)
 
         optix::Matrix4x4 mat( load_xform );
 
-        optix::float3* positions = reinterpret_cast<optix::float3*>( positions );
+        optix::float3* poss = reinterpret_cast<optix::float3*>( positions );
         for( int32_t i = 0; i < num_vertices; ++i )
         {
-            const optix::float3 v = optix::make_float3( mat*optix::make_float4( positions[i], 1.0f ) );
-            positions[i] = v;
+            const optix::float3 v = optix::make_float3( mat*optix::make_float4( poss[i], 1.0f ) );
+            poss[i] = v;
             bbox_min[0] = std::min<float>( bbox_min[0], v.x );
             bbox_min[1] = std::min<float>( bbox_min[1], v.y );
             bbox_min[2] = std::min<float>( bbox_min[2], v.z );
@@ -263,17 +282,12 @@ void grpt::triangle_mesh::mesh::load_xform(const float* load_xform)
         if( has_normals )
         {
             mat = mat.inverse().transpose();
-            optix::float3* normals = reinterpret_cast<optix::float3*>( normals );
+            optix::float3* normls = reinterpret_cast<optix::float3*>( normals );
             for( int32_t i = 0; i < num_vertices; ++i )
-                normals[i] = optix::make_float3( mat*optix::make_float4( normals[i], 1.0f ) );
+                normls[i] = optix::make_float3( mat*optix::make_float4( normls[i], 1.0f ) );
         }
     }
 
-}
-
-grpt::triangle_mesh::triangle_mesh(optix::Context cont, const std::string &filename, const optix::Matrix4x4 &load_xform) : context(cont), m(cont, filename)
-{
-    load_obj_file(filename, load_xform);
 }
 
 void grpt::triangle_mesh::load_obj_file(const std::string &filename, const optix::Matrix4x4 &load_xform)
@@ -294,4 +308,271 @@ void grpt::triangle_mesh::load_obj_file(const std::string &filename, const optix
 //    loadMeshOBJ( m );
     m.load(filename);
     m.load_xform( load_xform.getData() );
+}
+
+namespace optix {
+    float3 make_float3( const float* a )
+    {
+        return make_float3( a[0], a[1], a[2] );
+    }
+}
+
+void createMaterialPrograms(
+        optix::Context         context,
+        bool                   use_textures,
+        optix::Program&        closest_hit,
+        optix::Program&        any_hit
+)
+{
+    const char *ptx = sutil::getPtxString( NULL, "phong.cu" );
+
+    if( !closest_hit )
+        closest_hit = context->createProgramFromPTXString( ptx, use_textures ? "closest_hit_radiance_textured" : "closest_hit_radiance" );
+    if( !any_hit )
+        any_hit     = context->createProgramFromPTXString( ptx, "any_hit_shadow" );
+}
+
+optix::Material createOptiXMaterial(
+        optix::Context         context,
+        optix::Program         closest_hit,
+        optix::Program         any_hit,
+        const grpt::MaterialParams&  mat_params,
+        bool                   use_textures
+)
+{
+    optix::Material mat = context->createMaterial();
+    mat->setClosestHitProgram( 0u, closest_hit );
+    mat->setAnyHitProgram( 1u, any_hit ) ;
+
+    if( use_textures )
+        mat[ "Kd_map"]->setTextureSampler( sutil::loadTexture( context, mat_params.Kd_map, optix::make_float3(mat_params.Kd) ) );
+    else
+        mat[ "Kd_map"]->setTextureSampler( sutil::loadTexture( context, "", optix::make_float3(mat_params.Kd) ) );
+
+    mat[ "Kd_mapped" ]->setInt( use_textures  );
+    mat[ "Kd"        ]->set3fv( mat_params.Kd );
+    mat[ "Ks"        ]->set3fv( mat_params.Ks );
+    mat[ "Kr"        ]->set3fv( mat_params.Kr );
+    mat[ "Ka"        ]->set3fv( mat_params.Ka );
+    mat[ "phong_exp" ]->setFloat( mat_params.exp );
+
+    return mat;
+}
+
+
+optix::Material createOptiXMaterial(
+        optix::Context         context,
+        optix::Program         closest_hit,
+        optix::Program         any_hit,
+        const MaterialParams&  mat_params,
+        bool                   use_textures
+)
+{
+    optix::Material mat = context->createMaterial();
+    mat->setClosestHitProgram( 0u, closest_hit );
+    mat->setAnyHitProgram( 1u, any_hit ) ;
+
+    if( use_textures )
+        mat[ "Kd_map"]->setTextureSampler( sutil::loadTexture( context, mat_params.Kd_map, optix::make_float3(mat_params.Kd) ) );
+    else
+        mat[ "Kd_map"]->setTextureSampler( sutil::loadTexture( context, "", optix::make_float3(mat_params.Kd) ) );
+
+    mat[ "Kd_mapped" ]->setInt( use_textures  );
+    mat[ "Kd"        ]->set3fv( mat_params.Kd );
+    mat[ "Ks"        ]->set3fv( mat_params.Ks );
+    mat[ "Kr"        ]->set3fv( mat_params.Kr );
+    mat[ "Ka"        ]->set3fv( mat_params.Ka );
+    mat[ "phong_exp" ]->setFloat( mat_params.exp );
+
+    return mat;
+}
+
+optix::Program createBoundingBoxProgram( optix::Context context )
+{
+    return context->createProgramFromPTXString( sutil::getPtxString( NULL, "triangle_mesh.cu" ), "mesh_bounds" );
+}
+
+
+optix::Program createIntersectionProgram( optix::Context context )
+{
+    return context->createProgramFromPTXString( sutil::getPtxString( NULL, "triangle_mesh.cu" ), "mesh_intersect" );
+}
+
+struct MeshBuffers
+{
+    optix::Buffer tri_indices;
+    optix::Buffer mat_indices;
+    optix::Buffer positions;
+    optix::Buffer normals;
+    optix::Buffer texcoords;
+};
+
+
+void setupMeshLoaderInputs(
+        optix::Context            context,
+        MeshBuffers&              buffers,
+        Mesh&                     mesh
+)
+{
+    buffers.tri_indices = context->createBuffer( RT_BUFFER_INPUT, RT_FORMAT_INT3,   mesh.num_triangles );
+    buffers.mat_indices = context->createBuffer( RT_BUFFER_INPUT, RT_FORMAT_INT,    mesh.num_triangles );
+    buffers.positions   = context->createBuffer( RT_BUFFER_INPUT, RT_FORMAT_FLOAT3, mesh.num_vertices );
+    buffers.normals     = context->createBuffer( RT_BUFFER_INPUT, RT_FORMAT_FLOAT3,
+                                                 mesh.has_normals ? mesh.num_vertices : 0);
+    buffers.texcoords   = context->createBuffer( RT_BUFFER_INPUT, RT_FORMAT_FLOAT2,
+                                                 mesh.has_texcoords ? mesh.num_vertices : 0);
+
+    mesh.tri_indices = reinterpret_cast<int32_t*>( buffers.tri_indices->map() );
+    mesh.mat_indices = reinterpret_cast<int32_t*>( buffers.mat_indices->map() );
+    mesh.positions   = reinterpret_cast<float*>  ( buffers.positions->map() );
+    mesh.normals     = reinterpret_cast<float*>  ( mesh.has_normals   ? buffers.normals->map()   : 0 );
+    mesh.texcoords   = reinterpret_cast<float*>  ( mesh.has_texcoords ? buffers.texcoords->map() : 0 );
+
+    mesh.mat_params = new MaterialParams[ mesh.num_materials ];
+}
+
+Mesh m2m(const grpt::triangle_mesh::mesh& mesh)
+{
+    Mesh m;
+    m.mat_params = new MaterialParams[mesh.num_materials];
+
+    m.num_vertices = mesh.num_vertices;
+    m.positions = mesh.positions;
+    m.has_normals = mesh.has_normals;
+    m.normals = mesh.normals;
+    m.has_texcoords = mesh.has_texcoords;
+    m.texcoords = mesh.texcoords;
+    m.num_triangles = mesh.num_triangles;
+    m.tri_indices = mesh.tri_indices;
+    m.mat_indices = mesh.mat_indices;
+    m.bbox_min[0] = mesh.bbox_min[0];
+    m.bbox_min[1] = mesh.bbox_min[1];
+    m.bbox_min[2] = mesh.bbox_min[2];
+    m.bbox_max[0] = mesh.bbox_max[0];
+    m.bbox_max[1] = mesh.bbox_max[1];
+    m.bbox_max[2] = mesh.bbox_max[2];
+    m.num_materials = mesh.num_materials;
+    m.mat_params->name = mesh.mat_params->name;
+    m.mat_params->Kd_map = mesh.mat_params->Kd_map;
+    m.mat_params->Kd[0] = mesh.mat_params->Kd[0];
+    m.mat_params->Kd[1] = mesh.mat_params->Kd[1];
+    m.mat_params->Kd[2] = mesh.mat_params->Kd[2];
+    m.mat_params->Ks[0] = mesh.mat_params->Ks[0];
+    m.mat_params->Ks[1] = mesh.mat_params->Ks[1];
+    m.mat_params->Ks[2] = mesh.mat_params->Ks[2];
+    m.mat_params->Kr[0] = mesh.mat_params->Kr[0];
+    m.mat_params->Kr[1] = mesh.mat_params->Kr[1];
+    m.mat_params->Kr[2] = mesh.mat_params->Kr[2];
+    m.mat_params->Ka[0] = mesh.mat_params->Ka[0];
+    m.mat_params->Ka[1] = mesh.mat_params->Ka[1];
+    m.mat_params->Ka[2] = mesh.mat_params->Ka[2];
+    m.mat_params->exp = mesh.mat_params->exp;
+
+    return m;
+}
+
+grpt::triangle_mesh::triangle_mesh(optix::Context ctx, const std::string &filename, const optix::Matrix4x4 &load_xform) : context(ctx), m(ctx, filename)
+{
+    load_obj_file(filename, load_xform);
+//    Mesh mesh;
+    MeshLoader loader( filename );
+    Mesh mesh = m2m(m);
+
+    loader.scanMesh( mesh );
+
+    MeshBuffers buffers;
+    setupMeshLoaderInputs( context, buffers, mesh );
+
+    loader.loadMesh( mesh, load_xform.getData() );
+
+    bbox_min      = optix::make_float3( mesh.bbox_min );
+    bbox_max      = optix::make_float3( mesh.bbox_max );
+    num_triangles = mesh.num_triangles;
+
+    std::vector<optix::Material> optix_materials;
+    if( material )
+    {
+        // Rewrite all mat_indices to point to single override material
+        memset( mesh.mat_indices, 0, mesh.num_triangles*sizeof(int32_t) );
+
+        optix_materials.push_back( material );
+    }
+    else
+    {
+        bool have_textures = false;
+        for( int32_t i = 0; i < mesh.num_materials; ++i )
+            if( !mesh.mat_params[i].Kd_map.empty() )
+                have_textures = true;
+
+        optix::Program ch = closest_hit;
+        optix::Program ah = any_hit;
+        createMaterialPrograms( ctx, have_textures, ch, ah );
+
+        for( int32_t i = 0; i < mesh.num_materials; ++i )
+            optix_materials.push_back( createOptiXMaterial(
+                    ctx,
+                    ch,
+                    ah,
+                    mesh.mat_params[i],
+                    have_textures ) );
+    }
+
+    optix::Geometry geometry = ctx->createGeometry();
+    geometry[ "vertex_buffer"   ]->setBuffer( buffers.positions );
+    geometry[ "normal_buffer"   ]->setBuffer( buffers.normals);
+    geometry[ "texcoord_buffer" ]->setBuffer( buffers.texcoords );
+    geometry[ "material_buffer" ]->setBuffer( buffers.mat_indices);
+    geometry[ "index_buffer"    ]->setBuffer( buffers.tri_indices);
+    geometry->setPrimitiveCount     ( mesh.num_triangles );
+    geometry->setBoundingBoxProgram ( bounds ?
+                                      bounds :
+                                      createBoundingBoxProgram( ctx ) );
+    geometry->setIntersectionProgram( intersection ?
+                                      intersection :
+                                      createIntersectionProgram( ctx ) );
+
+    geom_instance = ctx->createGeometryInstance(
+            geometry,
+            optix_materials.begin(),
+            optix_materials.end()
+    );
+
+    buffers.tri_indices->unmap();
+    buffers.mat_indices->unmap();
+    buffers.positions->unmap();
+    if( mesh.has_normals )
+        buffers.normals->unmap();
+    if( mesh.has_texcoords)
+        buffers.texcoords->unmap();
+
+    mesh.tri_indices = nullptr;
+    mesh.mat_indices = nullptr;
+    mesh.positions   = nullptr;
+    mesh.normals     = nullptr;
+    mesh.texcoords   = nullptr;
+
+    delete[] mesh.mat_params;
+    mesh.mat_params = nullptr;
+
+//    unmap();
+}
+
+void grpt::triangle_mesh::unmap()
+{
+    m.buffers.tri_indices->unmap();
+    m.buffers.mat_indices->unmap();
+    m.buffers.positions->unmap();
+    if( m.has_normals )
+        m.buffers.normals->unmap();
+    if( m.has_texcoords)
+        m.buffers.texcoords->unmap();
+
+    m.tri_indices = nullptr;
+    m.mat_indices = nullptr;
+    m.positions   = nullptr;
+    m.normals     = nullptr;
+    m.texcoords   = nullptr;
+
+    delete[] m.mat_params;
+    m.mat_params = nullptr;
 }
