@@ -32,6 +32,12 @@
     "SPP" : 100,
     "BadColor" : [1000000.0, 0.0, 1000000.0],
     "BackgroundColor" : [0, 0, 0],
+    "SceneEpsilon"    : 1e-3,
+    "RayGenerationProgramFile" : "../src/ray_generators/ray_tracer.cu",
+    "RayGenerationProgram"     : "pinhole_camera",
+    "ExceptionProgram"         : "exception",
+    "MissProgramFile"          : "",
+    "MissProgram"              : "miss",
     "Geometry":
     {
         "Parallelograms":

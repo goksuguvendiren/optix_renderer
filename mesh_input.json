@@ -25,12 +25,18 @@
     },
     "Plane":
     {
-        "Width"  : 512,
-        "Height" : 512
+        "Width"  : 1024,
+        "Height" : 768
     },
     "SPP" : 100,
     "BadColor" : [1000000.0, 0.0, 1000000.0],
     "BackgroundColor" : [0, 0, 0],
+    "SceneEpsilon"    : 1e-4,
+    "RayGenerationProgramFile" : "../src/ray_generators/pinhole_camera.cu",
+    "RayGenerationProgram"     : "pinhole_camera",
+    "ExceptionProgram"         : "exception",
+    "MissProgramFile"          : "../constantbg.cu",
+    "MissProgram"              : "miss",
     "Geometry":
     {
         "Parallelograms":

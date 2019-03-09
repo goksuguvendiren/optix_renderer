@@ -46,8 +46,8 @@ auto scene = parser.LoadFromJson("../../mesh_input.json");
 //------------------------------------------------------------------------------
 
 //Context        context;
-uint32_t       width  = 1024u;
-uint32_t       height = 768u;
+//uint32_t       width  = 1024u;
+//uint32_t       height = 768u;
 bool           use_pbo = true;
 optix::Aabb    aabb;
 
@@ -61,7 +61,8 @@ sutil::Arcball arcball;
 // Mouse state
 int2           mouse_prev_pos;
 int            mouse_button;
-
+bool           camera_changed = true;
+unsigned int   frame_number = 1;
 
 //------------------------------------------------------------------------------
 //
@@ -103,11 +104,6 @@ Buffer getOutputBuffer()
 
 void destroyContext()
 {
-    if( scene.ctx() )
-    {
-        scene.ctx()->destroy();
-        scene.ctx() = 0;
-    }
 }
 
 
@@ -142,36 +138,7 @@ void registerExitHandler()
 
 void createContext( int usage_report_level, UsageReportLogger* logger )
 {
-    // Set up context
-    scene.ctx()->setRayTypeCount( 2 );
-    scene.ctx()->setEntryPointCount( 1 );
-    if( usage_report_level > 0 )
-    {
-        scene.ctx()->setUsageReportCallback( usageReportCallback, usage_report_level, logger );
-    }
-
-    scene.ctx()["radiance_ray_type"]->setUint( 0u );
-    scene.ctx()["shadow_ray_type"  ]->setUint( 1u );
-    scene.ctx()["scene_epsilon"    ]->setFloat( 1.e-4f );
-
-    Buffer buffer = sutil::createOutputBuffer( scene.ctx(), RT_FORMAT_UNSIGNED_BYTE4, width, height, use_pbo );
-    scene.ctx()["output_buffer"]->set( buffer );
-
-    // Ray generation program
-    const char *ptx = sutil::getPtxString( SAMPLE_NAME, "../src/ray_generators/pinhole_camera.cu" );
-    Program ray_gen_program = scene.ctx()->createProgramFromPTXString( ptx, "pinhole_camera" );
-    scene.ctx()->setRayGenerationProgram( 0, ray_gen_program );
-
-    // Exception program
-    Program exception_program = scene.ctx()->createProgramFromPTXString( ptx, "exception" );
-    scene.ctx()->setExceptionProgram( 0, exception_program );
-    scene.ctx()["bad_color"]->setFloat( 1.0f, 0.0f, 1.0f );
-
-    // Miss program
-    scene.ctx()->setMissProgram( 0, scene.ctx()->createProgramFromPTXString( sutil::getPtxString( SAMPLE_NAME, "../constantbg.cu" ), "miss" ) );
-    scene.ctx()["bg_color"]->setFloat( 0.34f, 0.55f, 0.85f );
 }
-
 
 void loadMesh( const std::string& filename )
 {
@@ -202,38 +169,21 @@ void setupCamera()
 
 void updateCamera()
 {
-    const float vfov = 35.0f;
-    const float aspect_ratio = static_cast<float>(width) /
-                               static_cast<float>(height);
-
     float3 camera_u, camera_v, camera_w;
-    sutil::calculateCameraVariables(
-            camera_eye, camera_lookat, camera_up, vfov, aspect_ratio,
-            camera_u, camera_v, camera_w, true );
 
-    const Matrix4x4 frame = Matrix4x4::fromBasis(
-            normalize( camera_u ),
-            normalize( camera_v ),
-            normalize( -camera_w ),
-            camera_lookat);
-    const Matrix4x4 frame_inv = frame.inverse();
-    // Apply camera rotation twice to match old SDK behavior
-    const Matrix4x4 trans     = frame*camera_rotate*camera_rotate*frame_inv;
-
-    camera_eye    = make_float3( trans*make_float4( camera_eye,    1.0f ) );
-    camera_lookat = make_float3( trans*make_float4( camera_lookat, 1.0f ) );
-    camera_up     = make_float3( trans*make_float4( camera_up,     0.0f ) );
-
-    sutil::calculateCameraVariables(
-            camera_eye, camera_lookat, camera_up, vfov, aspect_ratio,
-            camera_u, camera_v, camera_w, true );
-
-    camera_rotate = Matrix4x4::identity();
+    auto& camera = scene.get_camera();
+    std::tie(camera_u, camera_v, camera_w) = camera.Update(camera_eye, camera_lookat, camera_up, camera_rotate);
 
     scene.ctx()["eye"]->setFloat( camera_eye );
     scene.ctx()["U"  ]->setFloat( camera_u );
     scene.ctx()["V"  ]->setFloat( camera_v );
     scene.ctx()["W"  ]->setFloat( camera_w );
+
+    if( camera_changed ) // reset accumulation
+        frame_number = 1;
+    camera_changed = false;
+
+    scene.ctx()[ "frame_number" ]->setUint( frame_number++ );
 }
 
 
@@ -241,7 +191,7 @@ void glutInitialize( int* argc, char** argv )
 {
     glutInit( argc, argv );
     glutInitDisplayMode( GLUT_RGB | GLUT_ALPHA | GLUT_DEPTH | GLUT_DOUBLE );
-    glutInitWindowSize( width, height );
+    glutInitWindowSize( scene.width, scene.height );
     glutInitWindowPosition( 100, 100 );
     glutCreateWindow( SAMPLE_NAME );
     glutHideWindow();
@@ -258,10 +208,10 @@ void glutRun()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    glViewport(0, 0, width, height);
+    glViewport(0, 0, scene.width, scene.height);
 
     glutShowWindow();
-    glutReshapeWindow( width, height);
+    glutReshapeWindow( scene.width, scene.height);
 
     // register glut callbacks
     glutDisplayFunc( glutDisplay );
@@ -286,7 +236,7 @@ void glutRun()
 void glutDisplay()
 {
     updateCamera();
-    scene.ctx()->launch( 0, width, height );
+    scene.ctx()->launch( 0, scene.width, scene.height );
 
     sutil::displayBufferGL( getOutputBuffer() );
 
@@ -340,9 +290,9 @@ void glutMouseMotion( int x, int y)
     if( mouse_button == GLUT_RIGHT_BUTTON )
     {
         const float dx = static_cast<float>( x - mouse_prev_pos.x ) /
-                         static_cast<float>( width );
+                         static_cast<float>( scene.width );
         const float dy = static_cast<float>( y - mouse_prev_pos.y ) /
-                         static_cast<float>( height );
+                         static_cast<float>( scene.height );
         const float dmax = fabsf( dx ) > fabs( dy ) ? dx : dy;
         const float scale = fminf( dmax, 0.9f );
         camera_eye = camera_eye + (camera_lookat - camera_eye)*scale;
@@ -354,8 +304,8 @@ void glutMouseMotion( int x, int y)
         const float2 to   = { static_cast<float>(x),
                               static_cast<float>(y) };
 
-        const float2 a = { from.x / width, from.y / height };
-        const float2 b = { to.x   / width, to.y   / height };
+        const float2 a = { from.x / scene.width, from.y / scene.height };
+        const float2 b = { to.x   / scene.width, to.y   / scene.height };
 
         camera_rotate = arcball.rotate( b, a );
     }
@@ -366,15 +316,15 @@ void glutMouseMotion( int x, int y)
 
 void glutResize( int w, int h )
 {
-    if ( w == (int)width && h == (int)height ) return;
+    if ( w == (int)scene.width && h == (int)scene.height ) return;
 
-    width  = w;
-    height = h;
-    sutil::ensureMinimumSize(width, height);
+    scene.width  = w;
+    scene.height = h;
+    sutil::ensureMinimumSize(scene.width, scene.height);
 
-    sutil::resizeBuffer( getOutputBuffer(), width, height );
+    sutil::resizeBuffer( getOutputBuffer(), scene.width, scene.height );
 
-    glViewport(0, 0, width, height);
+    glViewport(0, 0, scene.width, scene.height);
 
     glutPostRedisplay();
 }
@@ -449,7 +399,6 @@ int main( int argc, char** argv )
         createContext( usage_report_level, &logger );
         loadMesh( mesh_file );
         setupCamera();
-        setupLights();
 
         scene.ctx()->validate();
 
@@ -460,7 +409,7 @@ int main( int argc, char** argv )
 //        else
         {
             updateCamera();
-            scene.ctx()->launch( 0, width, height );
+            scene.ctx()->launch( 0, scene.width, scene.height );
             sutil::displayBufferPPM( std::string{"../output_mash_viewer.ppm"}.c_str(), getOutputBuffer() );
             destroyContext();
         }

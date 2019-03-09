@@ -33,10 +33,17 @@ namespace grpt
         std::vector<point_light> point_ls;
         std::vector<area_light> area_ls;
 
+        std::string ray_gen_prog_path;
+        std::string ray_gen_prog;
+        std::string exception_prog;
+        std::string miss_prog_path;
+        std::string miss_prog;
+
         unsigned int width;
         unsigned int height;
         unsigned int spp;
         unsigned int rr_begin_depth;
+        float        scene_eps;
 
         optix::float3 bad_color;
         optix::float3 bg_color;
@@ -44,15 +51,10 @@ namespace grpt
         grpt::ctx cont;
         optix::Context& ctx() { return cont.get(); };
 
-        const grpt::camera& get_camera() const { return cameras[0]; }
+        grpt::camera& get_camera() { return cameras[0]; }
 
         std::string sample_name;
 
         void init();
-
-        void set_buffer()
-        {
-            cont.addPointLight(point_ls);
-        }
     };
 }

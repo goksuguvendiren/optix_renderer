@@ -26,13 +26,13 @@ namespace grpt
     class scene_parser
     {
     public:
-        grpt::camera load_camera(nlohmann::json& j)
+        grpt::camera load_camera(nlohmann::json& j, unsigned int w, unsigned int h)
         {
             auto eye = get_float3(j["Eye"]);
             auto at  = get_float3(j["Lookat"]);
             auto up  = get_float3(j["Up"]);
 
-            return grpt::camera{eye, at, up, optix::Matrix4x4::identity()};
+            return grpt::camera{eye, at, up, optix::Matrix4x4::identity(), w, h};
         }
 
         std::vector<grpt::point_light> load_point_light(nlohmann::json& j)
@@ -82,16 +82,22 @@ namespace grpt
             i >> j;
 
             scene sc;
-            sc.add_camera(load_camera(j["Camera"]));
+            sc.width  = j["Plane"]["Width"];
+            sc.height = j["Plane"]["Height"];
+            sc.add_camera(load_camera(j["Camera"], sc.width, sc.height));
             auto pls = load_point_light(j["Lights"]["PointLights"]);
             sc.add_point_light(load_point_light(j["Lights"]["PointLights"]));
 //            sc.add_area_light(load_area_light(j["Lights"][1]["AreaLight"]));
-            sc.width  = j["Plane"]["Width"];
-            sc.height = j["Plane"]["Height"];
             sc.spp    = j["SPP"];
             sc.bad_color = get_float3(j["BadColor"]);
             sc.bg_color  = get_float3(j["BackgroundColor"]);
             sc.sample_name = "optixPathTracer";
+            sc.scene_eps   = j["SceneEpsilon"];
+            sc.ray_gen_prog_path = j["RayGenerationProgramFile"];
+            sc.ray_gen_prog = j["RayGenerationProgram"];
+            sc.exception_prog = j["ExceptionProgram"];
+            sc.miss_prog_path = j["MissProgramFile"];
+            sc.miss_prog = j["MissProgram"];
 
             sc.init();
 
