@@ -10,8 +10,8 @@
         "PointLights":
         [
             {
-                "Position" : [343.0, 548.6, 227.0],
-                "Emission" : [0.3, 0.3, 0.3]
+                "Position" : [278.0, 548.6, 0.0],
+                "Emission" : [0.6, 0.6, 0.6]
             }
         ],
         "AreaLights":
@@ -27,12 +27,34 @@
     "Materials":
     [
         {
-            "Name" : "Blinn-Phong",
-            "DiffuseColor" : [],
-            "SpecularColor" : [],
-            "Exponent"      : 3.0,
-            "ClosestHit"    : "closest_hit.cu",
-            "AnyHit"        : "any_hit.cu"
+            "Name" : "BPWhite",
+            "Type" : "Blinn-Phong",
+            "DiffuseColor" : [0.8, 0.8, 0.8],
+            "SpecularColor" : [0, 0, 0],
+            "Exponent"      : 1.0,
+            "Source"        : "../src/shading_models/blinn_phong.cu",
+            "ClosestHit"    : "closest_hit",
+            "AnyHit"        : "any_hit"
+        },
+        {
+            "Name" : "BPGreen",
+            "Type" : "Blinn-Phong",
+            "DiffuseColor" : [0.05, 0.8, 0.05],
+            "SpecularColor" : [0, 0, 0],
+            "Exponent"      : 1.0,
+            "Source"        : "../src/shading_models/blinn_phong.cu",
+            "ClosestHit"    : "closest_hit",
+            "AnyHit"        : "any_hit"
+        },
+        {
+            "Name" : "BPRed",
+            "Type" : "Blinn-Phong",
+            "DiffuseColor" : [0.8, 0.05, 0.05],
+            "SpecularColor" : [0, 0, 0],
+            "Exponent"      : 1.0,
+            "Source"        : "../src/shading_models/blinn_phong.cu",
+            "ClosestHit"    : "closest_hit",
+            "AnyHit"        : "any_hit"
         }
     ],
     "Plane":
@@ -57,97 +79,97 @@
                 "anchor": [0.0, 0.0, 0.0],
                 "v1"    : [0.0, 0.0, 559.2],
                 "v2"    : [556.0, 0.0, 0.0],
-                "material" : "Blinn-Phong"
+                "material" : "BPWhite"
             },
             {
                 "anchor": [0.0, 548.8, 0.0],
                 "v1"    : [556.0, 0.0, 0.0],
                 "v2"    : [0.0, 0.0, 559.2],
-                "material" : "Blinn-Phong"
+                "material" : "BPWhite"
             },
             {
                 "anchor": [0.0, 0.0, 559.2],
                 "v1"    : [0.0, 548.8, 0.0],
                 "v2"    : [556.0, 0.0, 0.0],
-                "material" : "Blinn-Phong"
+                "material" : "BPWhite"
             },
             {
                 "anchor": [0.0, 0.0, 0.0],
                 "v1"    : [0.0, 548.8, 0.0],
                 "v2"    : [0.0, 0.0, 559.2],
-                "material" : "Blinn-Phong"
+                "material" : "BPGreen"
             },
             {
                 "anchor": [556.0, 0.0, 0.0],
                 "v1"    : [0.0, 0.0, 559.2],
                 "v2"    : [0.0, 548.8, 0.0],
-                "material" : "Blinn-Phong"
+                "material" : "BPRed"
             },
             {
                 "anchor": [130.0, 165.0, 65.0],
                 "v1"    : [-48.0, 0.0, 160.0],
                 "v2"    : [160.0, 0.0, 49.0],
-                "material" : "Blinn-Phong"
+                "material" : "BPWhite"
             },
             {
                 "anchor": [290.0, 0.0, 114.0],
                 "v1"    : [0.0, 165.0, 0.0],
                 "v2"    : [-50.0, 0.0, 158.0],
-                "material" : "Blinn-Phong"
+                "material" : "BPWhite"
             },
             {
                 "anchor": [130.0, 0.0, 65.0],
                 "v1"    : [0.0, 165.0, 0.0],
                 "v2"    : [160.0, 0.0, 49.0],
-                "material" : "Blinn-Phong"
+                "material" : "BPWhite"
             },
             {
                 "anchor": [82.0, 0.0, 225.0],
                 "v1"    : [0.0, 165.0, 0.0],
                 "v2"    : [48.0, 0.0, -160.0],
-                "material" : "Blinn-Phong"
+                "material" : "BPWhite"
             },
             {
                 "anchor": [240.0, 0.0, 272.0],
                 "v1"    : [0.0, 165.0, 0.0],
                 "v2"    : [-158.0, 0.0, -47.0],
-                "material" : "Blinn-Phong"
+                "material" : "BPWhite"
             },
             {
                 "anchor": [423.0, 330.0, 247.0],
                 "v1"    : [-158.0, 0.0, 49.0],
                 "v2"    : [49.0, 0.0, 159.0],
-                "material" : "Blinn-Phong"
+                "material" : "BPWhite"
             },
             {
                 "anchor": [423.0, 0.0, 247.0],
                 "v1"    : [0.0, 330.0, 0.0],
                 "v2"    : [49.0, 0.0, 159.0],
-                "material" : "Blinn-Phong"
+                "material" : "BPWhite"
             },
             {
                 "anchor": [472.0, 0.0, 406.0],
                 "v1"    : [0.0, 330.0, 0.0],
                 "v2"    : [-158.0, 0.0, 50.0],
-                "material" : "Blinn-Phong"
+                "material" : "BPWhite"
             },
             {
                 "anchor": [314.0, 0.0, 456.0],
                 "v1"    : [0.0, 330.0, 0.0],
                 "v2"    : [-49.0, 0.0, -160.0],
-                "material" : "Blinn-Phong"
+                "material" : "BPWhite"
             },
             {
                 "anchor": [265.0, 0.0, 296.0],
                 "v1"    : [0.0, 330.0, 0.0],
                 "v2"    : [158.0, 0.0, -49.0],
-                "material" : "Blinn-Phong"
+                "material" : "BPWhite"
             },
             {
                 "anchor" : [343.0, 548.6, 227.0],
                 "v1"     : [-130.0, 0.0, 0.0],
                 "v2"     : [0.0, 0.0, 105.0],
-                "material" : "Blinn-Phong"
+                "material" : "BPWhite"
             }
         ]
     }

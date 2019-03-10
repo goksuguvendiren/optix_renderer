@@ -60,6 +60,7 @@ namespace grpt
             std::vector<tinyobj::shape_t>       m_shapes;
             std::vector<tinyobj::material_t>    m_materials;
 
+            mesh();
             mesh(optix::Context& context, const std::string& filename);
             bool check_validity();
             void print_mesh_info( std::ostream& out );

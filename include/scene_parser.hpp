@@ -98,6 +98,35 @@ namespace grpt
 //            return tms;
 //        }
 
+        std::vector<material_data> load_materials(nlohmann::json& j)
+        {
+            std::vector<material_data> mats;
+
+            for (auto m : j)
+            {
+                if (m["Type"] == "Blinn-Phong")
+                {
+                    material_data data;
+                    data.name = m["Name"];
+                    data.type = m["Type"];
+                    data.source = m["Source"];
+                    data.closest_hit = m["ClosestHit"];
+                    data.any_hit = m["AnyHit"];
+
+                    data.diffuse_color = get_float3(m["DiffuseColor"]);
+                    data.specular_color = get_float3(m["SpecularColor"]);
+                    data.exponent = m["Exponent"];
+
+                    mats.push_back(std::move(data));
+                }
+                else
+                    throw std::runtime_error("Unknown material type!");
+            }
+
+            return mats;
+
+        }
+
         grpt::scene LoadFromJson(const std::string& json_path)
         {
             std::ifstream i(json_path);
@@ -125,6 +154,7 @@ namespace grpt
             sc.init();
 
             //TODO : load vertices and indices from the json.
+            sc.add_materials(load_materials(j["Materials"]));
             sc.add_geometry(load_parallelogram(j["Geometry"]));
 //            sc.add_geometry(load_triangle_meshes(j["Geometry"]));
 

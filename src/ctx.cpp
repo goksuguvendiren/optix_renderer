@@ -165,20 +165,31 @@ void grpt::ctx::addParallelogram(grpt::parallelogram pg)
     gis.push_back(instance);
 }
 
-void grpt::ctx::addMaterial(const std::string& name, const std::string& sample_name, const std::string& material_source_path,
-                            const std::string& closest_hit, const std::string& any_hit)
-{
-    if (name == "Blinn-Phong")
-    {
-        materials.insert({name, std::make_unique<grpt::blinn_phong>(context, material_source_path, closest_hit, any_hit)});
-    }
-    else
-        throw std::runtime_error("Unknown material type!");
-}
+//void grpt::ctx::addMaterial(const std::string& name, const std::string& sample_name, const std::string& material_source_path,
+//                            const std::string& closest_hit, const std::string& any_hit)
+//{
+//    if (name == "Blinn-Phong")
+//    {
+//        materials.insert({name, std::make_unique<grpt::blinn_phong>(context, material_source_path, closest_hit, any_hit)});
+//    }
+//    else
+//        throw std::runtime_error("Unknown material type!");
+//}
 
 void grpt::ctx::createGeometryGroup(const std::vector<optix::GeometryInstance>& gis, const std::string& name)
 {
     optix::GeometryGroup group = context->createGeometryGroup(gis.begin(), gis.end());
     group->setAcceleration(context->createAcceleration("Trbvh"));
     context[name]->set(group);
+}
+
+void grpt::ctx::addMaterial(const std::string &sample_name, grpt::material_data mat)
+{
+    if (mat.type == "Blinn-Phong")
+    {
+        materials.insert({mat.name, std::make_unique<grpt::blinn_phong>(context, mat.source, mat.closest_hit, mat.any_hit, mat.diffuse_color, mat.specular_color, mat.exponent)});
+    }
+    else
+        throw std::runtime_error("Unknown material type!");
+
 }

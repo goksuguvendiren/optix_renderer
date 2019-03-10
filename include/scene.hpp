@@ -33,6 +33,13 @@ namespace grpt
         void add_area_light(std::vector<grpt::area_light> als) { area_ls = std::move(als); }
         void add_geometry(std::vector<grpt::parallelogram> pgs);
         void add_geometry(std::vector<grpt::triangle_mesh> pgs);
+        void add_materials(std::vector<material_data> mats)
+        {
+            for (auto& mat : mats)
+            {
+                cont.addMaterial(sample_name, mat);
+            }
+        }
 
         std::vector<point_light> point_ls;
         std::vector<area_light> area_ls;

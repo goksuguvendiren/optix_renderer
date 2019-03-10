@@ -15,10 +15,11 @@ namespace grpt
         float         exponent;
 
     public:
-        blinn_phong(optix::Context context, const std::string& material_source_path, const std::string& closest_hit, const std::string& any_hit) :
-            base_material("Blinn-Phong", context, material_source_path, closest_hit, any_hit)
+        blinn_phong(optix::Context context, const std::string& material_source_path, const std::string& closest_hit,
+                const std::string& any_hit, const optix::float3& dc, const optix::float3& sc, float exp) :
+            base_material("Blinn-Phong", context, material_source_path, closest_hit, any_hit), diffuse_color(dc),
+            specular_color(sc), exponent(exp)
         {
-            diffuse_color = optix::make_float3(0.3f);
         }
         void set_variables(optix::GeometryInstance& instance)
         {
