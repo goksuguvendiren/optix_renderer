@@ -37,7 +37,7 @@ using namespace optix;
 const char* const SAMPLE_NAME = "optixMeshViewer";
 
 grpt::scene_parser parser;
-auto scene = parser.LoadFromJson("../../mesh_input.json");
+auto scene = parser.LoadFromJson("../../input.json");
 
 //------------------------------------------------------------------------------
 //
@@ -370,7 +370,7 @@ int main( int argc, char** argv )
 #endif
 
         UsageReportLogger logger;
-        loadMesh( mesh_file );
+//        loadMesh( mesh_file );
         setupCamera();
 
         scene.ctx()->validate();

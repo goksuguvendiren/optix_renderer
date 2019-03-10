@@ -6,8 +6,11 @@
 
 #include <optix/optixu/optixpp_namespace.h>
 #include <include/light_sources/point.hpp>
+#include <include/materials/base_material.hpp>
 #include <include/light_sources/area.hpp>
+
 #include <map>
+#include <memory>
 
 namespace grpt
 {
@@ -29,7 +32,8 @@ namespace grpt
         ~ctx();
 
         std::vector<optix::GeometryInstance> gis;
-        std::map<std::string, optix::Material> materials;
+        std::map<std::string, std::unique_ptr<grpt::base_material>> materials;
+//        std::map<std::string, optix::Material> materials;
 
         void init(const grpt::scene& sc);
 
@@ -40,9 +44,9 @@ namespace grpt
         void addParallelogram(grpt::parallelogram pg);
         void addParallelogram(const optix::float3 &anchor, const optix::float3 &o1, const optix::float3 &o2, const std::string& mat_name, const optix::float3 color);
         void addMaterial(const std::string& name, const std::string& sample_name, const std::string& material_source_path,
-                         const std::string& closest_hit, const std::string& any_hit);
-        void addMaterial(const std::string& name, const std::string& sample_name, const std::string& material_source_path,
-                         const std::string& closest_hit);
+                         const std::string& closest_hit, const std::string& any_hit = "");
+//        void addMaterial(const std::string& name, const std::string& sample_name, const std::string& material_source_path,
+//                         const std::string& closest_hit);
 
         optix::Buffer get_output_buffer();
         optix::Context& get();

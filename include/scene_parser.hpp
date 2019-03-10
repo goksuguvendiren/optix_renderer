@@ -9,6 +9,7 @@
 #include <scene.hpp>
 #include <json/json.hpp>
 #include "camera.hpp"
+#include <materials/blinn_phong.hpp>
 #include <shapes/parallelogram.hpp>
 
 #include <optixu_math_namespace.h>
@@ -37,7 +38,7 @@ namespace grpt
 
         std::vector<grpt::point_light> load_point_light(nlohmann::json& j)
         {
-            std::cout << j.dump(4) << std::endl;
+//            std::cout << j.dump(4) << std::endl;
             std::vector<grpt::point_light> pls;
             for (auto pl : j)
             {
@@ -50,14 +51,21 @@ namespace grpt
             return pls;
         }
 
-        grpt::area_light load_area_light(nlohmann::json& j)
+        std::vector<grpt::area_light> load_area_light(nlohmann::json& j)
         {
-            auto corner = get_float3(j["Corner"]);
-            auto v1     = get_float3(j["V1"]);
-            auto v2     = get_float3(j["V2"]);
-            auto ems    = get_float3(j["Emission"]);
+            std::vector<grpt::area_light> als;
 
-            return {corner, v1, v2, ems};
+            std::cerr << j.dump(4) << '\n';
+            for (auto al : j)
+            {
+                auto corner = get_float3(al["Corner"]);
+                auto v1 = get_float3(al["V1"]);
+                auto v2 = get_float3(al["V2"]);
+                auto ems = get_float3(al["Emission"]);
+
+                als.emplace_back(corner, v1, v2, ems);
+            }
+            return als;
         }
 
         std::vector<grpt::parallelogram> load_parallelogram(nlohmann::json& j)
@@ -102,7 +110,7 @@ namespace grpt
             sc.add_camera(load_camera(j["Camera"], sc.width, sc.height));
             auto pls = load_point_light(j["Lights"]["PointLights"]);
             sc.add_point_light(load_point_light(j["Lights"]["PointLights"]));
-//            sc.add_area_light(load_area_light(j["Lights"][1]["AreaLight"]));
+            sc.add_area_light(load_area_light(j["Lights"]["AreaLights"]));
             sc.spp    = j["SPP"];
             sc.bad_color = get_float3(j["BadColor"]);
             sc.bg_color  = get_float3(j["BackgroundColor"]);

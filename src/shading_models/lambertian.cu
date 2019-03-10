@@ -67,39 +67,39 @@ RT_PROGRAM void diffuse()
     //ambient
     optix::float3 result = Ka * ambient_color * diffuse_color;
     optix::float3 hit_point = ray.origin + t_hit * ray.direction;
+//
+//    for (int i = 0; i < point_lights.size(); ++i)
+//    {
+//        grpt::point_light light = point_lights[i];
+//
+//        PerRayData_pathtrace_shadow shadow_payload;
+//        shadow_payload.inShadow = false;
+//        //TODO : try the other way
+//        float light_distance = optix::length(light.Position() - hit_point);
+//        optix::float3 L = optix::normalize(light.Position() - hit_point);
+//        optix::Ray shadow_ray = optix::make_Ray(hit_point, L, 1, scene_epsilon, light_distance);
+//        rtTrace(top_object, shadow_ray, shadow_payload);
+//
+//        if (shadow_payload.inShadow) continue;
+//
+//        float cos_theta = optix::dot(L, ffnormal);
+//
+//        if (cos_theta > 0)
+//        {
+//            // diffuse term
+//            result += Ka * cos_theta * light.Emission();
+//
+//            // specular term
+//            optix::float3 H = optix::normalize(L - ray.direction);
+//            float cos_alpha = optix::dot(H, ffnormal);
+//            if (cos_alpha > 0)
+//            {
+//                result += Ks * light.Emission() * pow(cos_alpha, phong_exp);
+//            }
+//        }
+//    }
 
-    for (int i = 0; i < point_lights.size(); ++i)
-    {
-        grpt::point_light light = point_lights[i];
-
-        PerRayData_pathtrace_shadow shadow_payload;
-        shadow_payload.inShadow = false;
-        //TODO : try the other way
-        float light_distance = optix::length(light.Position() - hit_point);
-        optix::float3 L = optix::normalize(light.Position() - hit_point);
-        optix::Ray shadow_ray = optix::make_Ray(hit_point, L, 1, scene_epsilon, light_distance);
-        rtTrace(top_object, shadow_ray, shadow_payload);
-
-        if (shadow_payload.inShadow) continue;
-
-        float cos_theta = optix::dot(L, ffnormal);
-
-        if (cos_theta > 0)
-        {
-            // diffuse term
-            result += Ka * cos_theta * light.Emission();
-
-            // specular term
-            optix::float3 H = optix::normalize(L - ray.direction);
-            float cos_alpha = optix::dot(H, ffnormal);
-            if (cos_alpha > 0)
-            {
-                result += Ks * light.Emission() * pow(cos_alpha, phong_exp);
-            }
-        }
-    }
-
-    current_prd.result = result;
+    current_prd.result = (ffnormal + optix::make_float3(1.0f)) / 2.f ;//result;
 }
 
 

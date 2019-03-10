@@ -10,6 +10,8 @@
 #include <cstring>
 #include <vector>
 #include <include/shapes/parallelogram.hpp>
+#include <include/materials/base_material.hpp>
+#include <include/materials/blinn_phong.hpp>
 
 grpt::ctx::ctx()
 {
@@ -127,6 +129,12 @@ void set_material(optix::GeometryInstance& gi, optix::Material material, const s
     gi[color_name]->setFloat(color);
 }
 
+void set_material(optix::GeometryInstance& gi, std::unique_ptr<grpt::base_material>& material)
+{
+    gi->addMaterial(material->get());
+    material->set_variables(gi);
+}
+
 void set_material(optix::GeometryInstance& gi, optix::Material material, const std::vector<std::pair<std::string, optix::float3>>& colors)
 {
     gi->addMaterial(material);
@@ -139,8 +147,8 @@ void grpt::ctx::addParallelogram(const optix::float3 &anchor, const optix::float
     auto pg = grpt::parallelogram(anchor, o1, o2, mat_name, color);
     auto instance = get_instance(pg);
 
-    auto mat = materials[mat_name];
-    set_material(instance, mat, "diffuse_color", color);
+    auto& mat = materials[mat_name];
+    set_material(instance, mat);
 //    set_material(instance, mat, {{"diffuse_color", color}});
 
     gis.push_back(instance);
@@ -150,35 +158,22 @@ void grpt::ctx::addParallelogram(grpt::parallelogram pg)
 {
     auto instance = get_instance(pg);
 
-    auto mat = materials[pg.material];
-    set_material(instance, mat, "diffuse_color", pg.color);
-//    set_material(instance, mat, {{"diffuse_color", pg.color}});
+    //TODO: check if material exists or not.
+    auto& mat = materials[pg.material];
+    assert(mat);
+    set_material(instance, mat);
     gis.push_back(instance);
 }
 
 void grpt::ctx::addMaterial(const std::string& name, const std::string& sample_name, const std::string& material_source_path,
                             const std::string& closest_hit, const std::string& any_hit)
 {
-    auto mat = context->createMaterial();
-    const char *ptx = sutil::getPtxString( sample_name.c_str(), material_source_path.c_str());
-    auto diffuse_ch = context->createProgramFromPTXString( ptx, closest_hit );
-    auto diffuse_ah = context->createProgramFromPTXString( ptx, any_hit );
-    mat->setClosestHitProgram( 0, diffuse_ch );
-    mat->setAnyHitProgram( 1, diffuse_ah );
-
-    materials.insert({name, mat});
-}
-
-void
-grpt::ctx::addMaterial(const std::string &name, const std::string &sample_name, const std::string &material_source_path,
-                       const std::string &closest_hit)
-{
-    auto mat = context->createMaterial();
-    const char *ptx = sutil::getPtxString( sample_name.c_str(), material_source_path.c_str());
-    auto diffuse_ch = context->createProgramFromPTXString( ptx, closest_hit );
-    mat->setClosestHitProgram( 0, diffuse_ch );
-
-    materials.insert({name, mat});
+    if (name == "Blinn-Phong")
+    {
+        materials.insert({name, std::make_unique<grpt::blinn_phong>(context, material_source_path, closest_hit, any_hit)});
+    }
+    else
+        throw std::runtime_error("Unknown material type!");
 }
 
 void grpt::ctx::createGeometryGroup(const std::vector<optix::GeometryInstance>& gis, const std::string& name)

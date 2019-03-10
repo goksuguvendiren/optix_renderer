@@ -30,6 +30,7 @@ namespace grpt
         void add_point_light(grpt::point_light&& l) { point_ls.push_back(l); }
         void add_point_light(std::vector<grpt::point_light> pls) { point_ls = std::move(pls); }
         void add_area_light(grpt::area_light&& l) { area_ls.push_back(l); }
+        void add_area_light(std::vector<grpt::area_light> als) { area_ls = std::move(als); }
         void add_geometry(std::vector<grpt::parallelogram> pgs);
         void add_geometry(std::vector<grpt::triangle_mesh> pgs);
 
