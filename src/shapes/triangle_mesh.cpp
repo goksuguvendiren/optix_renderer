@@ -12,6 +12,7 @@
 
 grpt::triangle_mesh::mesh::mesh(optix::Context& context, const std::string& filename)
 {
+    // beginning of scanmesh()
     std::string error;
     auto ret = tinyobj::LoadObj(m_shapes, m_materials, error, filename.c_str(), utils::directoryOfFilePath( filename ).c_str());
 
@@ -82,6 +83,8 @@ grpt::triangle_mesh::mesh::mesh(optix::Context& context, const std::string& file
     }
 
     num_materials = (int32_t) m_materials.size();
+
+    // beginning of setupMeshLoaderInputs
 
     // setup mesh loader inputs
     buffers.tri_indices = context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_INT3, num_triangles);
@@ -290,24 +293,29 @@ void grpt::triangle_mesh::mesh::load_xform(const float* load_xform)
 
 }
 
+grpt::triangle_mesh::mesh::mesh()
+{
+    num_vertices  = 0;
+    positions = nullptr;
+
+    has_normals = false;
+    normals = nullptr;
+
+    has_texcoords = false;
+    texcoords = nullptr;
+
+    num_triangles = 0;
+    tri_indices = nullptr;
+    mat_indices = nullptr;
+
+    num_materials = 0;
+    mat_params = nullptr;
+}
+
 void grpt::triangle_mesh::load_obj_file(const std::string &filename, const optix::Matrix4x4 &load_xform)
 {
     if (utils::getExtension(filename) != "obj") return;
-
-    if( !m.check_validity() )
-    {
-        std::cerr << "MeshLoader - ERROR: Attempted to load mesh '" << filename
-                  << "' into invalid mesh struct:" << std::endl;
-        m.print_mesh_info( std::cerr );
-        return;
-    }
-
-    m.bbox_min[0] = m.bbox_min[1] = m.bbox_min[2] =  1e16f;
-    m.bbox_max[0] = m.bbox_max[1] = m.bbox_max[2] = -1e16f;
-
 //    loadMeshOBJ( m );
-    m.load(filename);
-    m.load_xform( load_xform.getData() );
 }
 
 namespace optix {
